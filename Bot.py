@@ -7,6 +7,7 @@ CHANNEL_VIP = "-1003727929609"
 CHAT_FREE = "https://t.me/vigcomm"
 CHAT_VIP = "https://t.me/+UZ2GwssR5so3MzVi"
 TRIBUTE_URL = "https://t.me/tribute/app?startapp=sN2w"
+YOUR_USERNAME = "@Fullllmooooooooooooo"
 
 bot = telebot.TeleBot(TOKEN)
 bot.remove_webhook()
@@ -37,12 +38,46 @@ def callback(call):
 Оплати → добавлю!", call.message.chat.id, call.message.message_id, reply_markup=markup)
     
     elif call.data == "services":
+        markup = types.InlineKeyboardMarkup(row_width=1)
+        markup.add(types.InlineKeyboardButton("📝 Написать нам", url="https://t.me/Fullllmooooooooooooo"))
+        markup.add(types.InlineKeyboardButton("💰 Полный прайс", callback_data="prices"))
+        bot.edit_message_text("🎛️ Сведение/Мастеринг
+
+Нажми для подробностей:", call.message.chat.id, call.message.message_id, reply_markup=markup)
+    
+    elif call.data == "prices":
+        text = """🌾 Здравствуйте, на связи команда "Voice Inside Galaxy"
+
+Услуги и расценки:
+
+1️⃣ Сведение + мастеринг: 10000₽
+2️⃣ Ручная коррекция нот вокала: 5000₽
+3️⃣ Текст для песни: 3500₽
+4️⃣ Аранжировка, Бит, инструментал: от 5000₽
+5️⃣ Сведение бита: от 3000₽
+6️⃣ Мастеринг: 3000₽
+
+🌼 Оплата:
+1. Банковский перевод (Сбербанк)
+2. Перевод криптой в Telegram (скидка 10%)
+3. Перевод криптой на сторонний кошелёк (USDC base/ USDT ton)
+
+🌸 Также просим ознакомиться:
+
+По поводу рекламы: Markusqueenwork@gmail.com
+
+⚠️ Важно!
+1. Работаем только по полной предоплате
+2. Оплата не подлежит отмене в случае выполненной работы
+3. На каждый проект допускается 3 правки
+4. Мы не занимаемся мошенничеством, честно выполняем свою работу
+5. При махинациях с оплатой мы оставляем за собой право заблокировать пользователя
+
+📝 {} для заказа""".format(YOUR_USERNAME)
+        
         markup = types.InlineKeyboardMarkup()
-        markup.add(types.InlineKeyboardButton("📝 @Fullllmooooooooooooo", url="https://t.me/Fullllmooooooooooooo"))
-        bot.edit_message_text("🎛️ Услуги:
-Сведение от 3000₽
-Мастеринг 3000₽
-Полный пакет 10000₽", call.message.chat.id, call.message.message_id, reply_markup=markup)
+        markup.add(types.InlineKeyboardButton("✉️ Заказать услугу", url="https://t.me/Fullllmooooooooooooo"))
+        bot.edit_message_text(text, call.message.chat.id, call.message.message_id, reply_markup=markup)
     
     elif call.data == "check_free":
         try:
