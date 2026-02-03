@@ -26,8 +26,7 @@ def callback(call):
         markup = types.InlineKeyboardMarkup()
         markup.add(types.InlineKeyboardButton("📢 Подписаться", url="https://t.me/voiceinsideglxy"))
         markup.add(types.InlineKeyboardButton("✅ Проверить", callback_data="check_free"))
-        bot.edit_message_text("💬 Бесплатный чат
-Подпишись → получи доступ:", call.message.chat.id, call.message.message_id, reply_markup=markup)
+    bot.edit_message_text("💬 Бесплатный чат Подпишись → получи доступ:", call.message.chat.id, call.message.message_id, reply_markup=markup)
     
     elif call.data == "vip":
         markup = types.InlineKeyboardMarkup()
