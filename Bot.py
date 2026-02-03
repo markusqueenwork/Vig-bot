@@ -16,8 +16,8 @@ def start(message):
 @bot.callback_query_handler(func=lambda call: True)
 def callback(call):
     if call.data == "free":
-        bot.answer_callback_query(call.id, "💬 Бесплатный чат
-Подпишись на канал!")
+        bot.answer_callback_query(call.id, "💬 Бесплатный чат")
+("Подпишись на канал!")
     elif call.data == "vip":
         bot.answer_callback_query(call.id, "💎 VIP 100₽/мес
 Оплати для доступа!")
