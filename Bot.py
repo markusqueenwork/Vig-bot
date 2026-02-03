@@ -1,7 +1,8 @@
 import telebot
 from telebot import types
+import os
 
-TOKEN = os.environ.get('BOT_TOKEN')  # ← ИЗ Bothost!
+TOKEN = os.environ.get('BOT_TOKEN')
 CHANNEL_FREE = "-1001524100665"
 CHANNEL_VIP = "-1003727929609"
 CHAT_FREE = "https://t.me/vigcomm"
@@ -26,7 +27,8 @@ def callback(call):
         markup = types.InlineKeyboardMarkup()
         markup.add(types.InlineKeyboardButton("📢 Подписаться", url="https://t.me/voiceinsideglxy"))
         markup.add(types.InlineKeyboardButton("✅ Проверить", callback_data="check_free"))
-    bot.edit_message_text("💬 Бесплатный чат Подпишись → получи доступ:", call.message.chat.id, call.message.message_id, reply_markup=markup)
+        bot.edit_message_text("💬 Бесплатный чат
+Подпишись → получи доступ:", call.message.chat.id, call.message.message_id, reply_markup=markup)
     
     elif call.data == "vip":
         markup = types.InlineKeyboardMarkup()
@@ -48,7 +50,6 @@ def callback(call):
         text = """🌾 Здравствуйте, на связи команда "Voice Inside Galaxy"
 
 Услуги и расценки:
-
 1️⃣ Сведение + мастеринг: 10000₽
 2️⃣ Ручная коррекция нот вокала: 5000₽
 3️⃣ Текст для песни: 3500₽
@@ -61,19 +62,16 @@ def callback(call):
 2. Перевод криптой в Telegram (скидка 10%)
 3. Перевод криптой на сторонний кошелёк (USDC base/ USDT ton)
 
-🌸 Также просим ознакомиться:
-
 По поводу рекламы: Markusqueenwork@gmail.com
 
 ⚠️ Важно!
 1. Работаем только по полной предоплате
-2. Оплата не подлежит отмене в случае выполненной работы
-3. На каждый проект допускается 3 правки
-4. Мы не занимаемся мошенничеством, честно выполняем свою работу
-5. При махинациях с оплатой мы оставляем за собой право заблокировать пользователя
+2. Оплата не подлежит отмене
+3. На каждый проект 3 правки
+4. Честно выполняем работу
+5. При махинациях блокируем
 
 📝 {} для заказа""".format(YOUR_USERNAME)
-        
         markup = types.InlineKeyboardMarkup()
         markup.add(types.InlineKeyboardButton("✉️ Заказать услугу", url="https://t.me/Fullllmooooooooooooo"))
         bot.edit_message_text(text, call.message.chat.id, call.message.message_id, reply_markup=markup)
@@ -82,8 +80,7 @@ def callback(call):
         try:
             status = bot.get_chat_member(CHANNEL_FREE, call.from_user.id).status
             if status in ['member','administrator','creator']:
-                bot.edit_message_text("✅ Доступ к чату:
-" + CHAT_FREE, call.message.chat.id, call.message.message_id)
+                bot.edit_message_text("✅ Доступ к чату: " + CHAT_FREE, call.message.chat.id, call.message.message_id)
             else:
                 markup = types.InlineKeyboardMarkup()
                 markup.add(types.InlineKeyboardButton("📢 Подписаться", url="https://t.me/voiceinsideglxy"))
@@ -96,8 +93,7 @@ def callback(call):
         try:
             status = bot.get_chat_member(CHANNEL_VIP, call.from_user.id).status
             if status in ['member','administrator','creator']:
-                bot.edit_message_text("✅ VIP доступ:
-" + CHAT_VIP, call.message.chat.id, call.message.message_id)
+                bot.edit_message_text("✅ VIP доступ: " + CHAT_VIP, call.message.chat.id, call.message.message_id)
             else:
                 markup = types.InlineKeyboardMarkup()
                 markup.add(types.InlineKeyboardButton("💳 Оплатить 100₽", url=TRIBUTE_URL))
