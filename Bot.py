@@ -16,87 +16,90 @@ bot.remove_webhook()
 @bot.message_handler(commands=['start'])
 def start(message):
     markup = types.InlineKeyboardMarkup(row_width=1)
-    markup.add(types.InlineKeyboardButton("Besplatny chat", callback_data="free"))
-    markup.add(types.InlineKeyboardButton("VIP 100rub/mes", callback_data="vip"))
-    markup.add(types.InlineKeyboardButton("Uslugi", callback_data="services"))
-    bot.send_message(message.chat.id, "Voice Inside Galaxy", reply_markup=markup)
+    markup.add(types.InlineKeyboardButton("💬 Бесплатный чат", callback_data="free"))
+    markup.add(types.InlineKeyboardButton("💎 VIP 100р/мес", callback_data="vip"))
+    markup.add(types.InlineKeyboardButton("🎛️ Услуги", callback_data="services"))
+    bot.send_message(message.chat.id, "🎵 Voice Inside Galaxy", reply_markup=markup)
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback(call):
     if call.data == "free":
         markup = types.InlineKeyboardMarkup()
-        markup.add(types.InlineKeyboardButton("Podpischis", url="https://t.me/voiceinsideglxy"))
-        markup.add(types.InlineKeyboardButton("Proverit", callback_data="check_free"))
-        bot.edit_message_text("Besplatny chat. Podpischis na kanal!", call.message.chat.id, call.message.message_id, reply_markup=markup)
+        markup.add(types.InlineKeyboardButton("📢 Подписаться", url="https://t.me/voiceinsideglxy"))
+        markup.add(types.InlineKeyboardButton("✅ Проверить", callback_data="check_free"))
+        bot.edit_message_text("💬 Бесплатный чат
+Подпишись → получи доступ:", call.message.chat.id, call.message.message_id, reply_markup=markup)
     
     elif call.data == "vip":
         markup = types.InlineKeyboardMarkup()
-        markup.add(types.InlineKeyboardButton("Oplatit 100rub", url=TRIBUTE_URL))
-        markup.add(types.InlineKeyboardButton("Proverit VIP", callback_data="check_vip"))
-        bot.edit_message_text("VIP kanal 100rub/mes. Oplati dobavlyu!", call.message.chat.id, call.message.message_id, reply_markup=markup)
+        markup.add(types.InlineKeyboardButton("💳 Оплатить 100р", url=TRIBUTE_URL))
+        markup.add(types.InlineKeyboardButton("✅ Проверить VIP", callback_data="check_vip"))
+        bot.edit_message_text("💎 VIP канал
+100р/мес • Эксклюзив
+Оплати → добавлю!", call.message.chat.id, call.message.message_id, reply_markup=markup)
     
     elif call.data == "services":
         markup = types.InlineKeyboardMarkup(row_width=1)
-        markup.add(types.InlineKeyboardButton("Napisat nam", url="https://t.me/Fullllmooooooooooooo"))
-        markup.add(types.InlineKeyboardButton("Prais", callback_data="prices"))
-        bot.edit_message_text("Svedenie Mastering. Nai mi podrobnosti!", call.message.chat.id, call.message.message_id, reply_markup=markup)
+        markup.add(types.InlineKeyboardButton("📝 Написать нам", url="https://t.me/Fullllmooooooooooooo"))
+        markup.add(types.InlineKeyboardButton("💰 Полный прайс", callback_data="prices"))
+        bot.edit_message_text("🎛️ Сведение/Мастеринг
+
+Нажми для подробностей:", call.message.chat.id, call.message.message_id, reply_markup=markup)
     
     elif call.data == "prices":
-        text = """Zdravstvuyte! Voice Inside Galaxy
+        text = """🌾 Здравствуйте, команда "Voice Inside Galaxy"
 
-Uslugi:
-1. Svedenie + mastering: 10000rub
-2. Korekciya vokala: 5000rub
-3. Tekst pesni: 3500rub
-4. Aranzhirovka ot 5000rub
-5. Svedenie bita ot 3000rub
-6. Mastering 3000rub
+Услуги:
+1️⃣ Сведение+мастеринг: 10000р
+2️⃣ Коррекция вокала: 5000р
+3️⃣ Текст песни: 3500р
+4️⃣ Аранжировка: от 5000р
+5️⃣ Сведение бита: от 3000р
+6️⃣ Мастеринг: 3000р
 
-Oплата:
-1. Sberbank
-2. Kripta Telegram -10%
-3. USDC base USDT ton
+Оплата:
+1. Сбербанк
+2. Крипта Telegram (-10%)
+3. USDC/USDT
 
-Reklama: Markusqueenwork@gmail.com
+Реклама: Markusqueenwork@gmail.com
 
-Vazhno:
-1. Polnaa predoplata
-2. Oплата ne otmeniaetsa
-3. 3 pravki na proekt
-4. Chestnaa rabota
-5. Mahinacii = blok
-
-{} dla zaказа""".format(YOUR_USERNAME)
+⚠️ Важно:
+Полная предоплата
+3 правки на проект
+{} для заказа""".format(YOUR_USERNAME)
         
         markup = types.InlineKeyboardMarkup()
-        markup.add(types.InlineKeyboardButton("Zakazat", url="https://t.me/Fullllmooooooooooooo"))
+        markup.add(types.InlineKeyboardButton("✉️ Заказать услугу", url="https://t.me/Fullllmooooooooooooo"))
         bot.edit_message_text(text, call.message.chat.id, call.message.message_id, reply_markup=markup)
     
     elif call.data == "check_free":
         try:
             status = bot.get_chat_member(CHANNEL_FREE, call.from_user.id).status
             if status in ['member','administrator','creator']:
-                bot.edit_message_text("Dostup k chatu: " + CHAT_FREE, call.message.chat.id, call.message.message_id)
+                bot.edit_message_text("✅ Доступ к чату:
+" + CHAT_FREE, call.message.chat.id, call.message.message_id)
             else:
                 markup = types.InlineKeyboardMarkup()
-                markup.add(types.InlineKeyboardButton("Podpischis", url="https://t.me/voiceinsideglxy"))
-                markup.add(types.InlineKeyboardButton("Proverit", callback_data="check_free"))
-                bot.edit_message_text("Podpischis snachala!", call.message.chat.id, call.message.message_id, reply_markup=markup)
+                markup.add(types.InlineKeyboardButton("📢 Подписаться", url="https://t.me/voiceinsideglxy"))
+                markup.add(types.InlineKeyboardButton("🔄 Проверить", callback_data="check_free"))
+                bot.edit_message_text("❌ Подпишись сначала!", call.message.chat.id, call.message.message_id, reply_markup=markup)
         except:
-            bot.answer_callback_query(call.id, "Bot ne admin kanala!")
+            bot.answer_callback_query(call.id, "Бот не админ канала!")
     
     elif call.data == "check_vip":
         try:
             status = bot.get_chat_member(CHANNEL_VIP, call.from_user.id).status
             if status in ['member','administrator','creator']:
-                bot.edit_message_text("VIP dostup: " + CHAT_VIP, call.message.chat.id, call.message.message_id)
+                bot.edit_message_text("✅ VIP доступ:
+" + CHAT_VIP, call.message.chat.id, call.message.message_id)
             else:
                 markup = types.InlineKeyboardMarkup()
-                markup.add(types.InlineKeyboardButton("Oplatit 100rub", url=TRIBUTE_URL))
-                bot.edit_message_text("Oplati VIP!", call.message.chat.id, call.message.message_id, reply_markup=markup)
+                markup.add(types.InlineKeyboardButton("💳 Оплатить 100р", url=TRIBUTE_URL))
+                bot.edit_message_text("❌ Оплати VIP!", call.message.chat.id, call.message.message_id, reply_markup=markup)
         except:
-            bot.answer_callback_query(call.id, "Bot ne admin VIP!")
+            bot.answer_callback_query(call.id, "Бот не админ VIP!")
 
 if __name__ == "__main__":
-    print("Bot zapuschen!")
+    print("🚀 Бот запущен!")
     bot.polling(none_stop=True)
