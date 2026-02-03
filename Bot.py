@@ -1,7 +1,7 @@
 import telebot
 from telebot import types
 
-TOKEN = "8294451648:AAFV-vMPVo4wHbkjjnN6W5_5Q39BxcTwCpg"
+TOKEN = os.environ.get('BOT_TOKEN')  # ← ИЗ Bothost!
 CHANNEL_FREE = "-1001524100665"
 CHANNEL_VIP = "-1003727929609"
 CHAT_FREE = "https://t.me/vigcomm"
@@ -26,7 +26,7 @@ def callback(call):
         markup = types.InlineKeyboardMarkup()
         markup.add(types.InlineKeyboardButton("📢 Подписаться", url="https://t.me/voiceinsideglxy"))
         markup.add(types.InlineKeyboardButton("✅ Проверить", callback_data="check_free"))
-        bot.edit_message_text("💬 Бесплатный чат")
+        bot.edit_message_text("💬 Бесплатный чат
 Подпишись → получи доступ:", call.message.chat.id, call.message.message_id, reply_markup=markup)
     
     elif call.data == "vip":
