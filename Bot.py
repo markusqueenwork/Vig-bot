@@ -8,6 +8,7 @@ CHANNEL_VIP = "-1003727929609"
 CHAT_FREE = "https://t.me/vigcomm"
 CHAT_VIP = "https://t.me/+UZ2GwssR5so3MzVi"
 TRIBUTE_URL = "https://t.me/tribute/app?startapp=sN2w"
+DONATE_URL = "https://t.me/tribute/app?startapp=dFla"
 YOUR_USERNAME = "@Fullllmooooooooooooo"
 
 bot = telebot.TeleBot(TOKEN)
@@ -18,6 +19,7 @@ def start(message):
     markup = types.InlineKeyboardMarkup(row_width=1)
     markup.add(types.InlineKeyboardButton("Бесплатный чат", callback_data="free"))
     markup.add(types.InlineKeyboardButton("VIP 100р/мес", callback_data="vip"))
+    markup.add(types.InlineKeyboardButton("Донат", url=DONATE_URL))
     markup.add(types.InlineKeyboardButton("Услуги", callback_data="services"))
     bot.send_message(message.chat.id, "Voice Inside Galaxy", reply_markup=markup)
 
