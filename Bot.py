@@ -35,7 +35,7 @@ def callback(call):
         markup = types.InlineKeyboardMarkup()
         markup.add(types.InlineKeyboardButton("Оплатить", url=TRIBUTE_URL))
         markup.add(types.InlineKeyboardButton("Проверить оплату", callback_data="check_vip"))
-        bot.edit_message_text("VIP канал 100р/мес. Оплати добавлю!", call.message.chat.id, call.message.message_id, reply_markup=markup)
+        bot.edit_message_text("Доступ в закрытый канал", call.message.chat.id, call.message.message_id, reply_markup=markup)
     
     elif call.data == "services":
         markup = types.InlineKeyboardMarkup(row_width=1)
