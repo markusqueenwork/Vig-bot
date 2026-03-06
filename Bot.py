@@ -18,7 +18,7 @@ bot.remove_webhook()
 def start(message):
     markup = types.InlineKeyboardMarkup(row_width=1)
     markup.add(types.InlineKeyboardButton("Бесплатный чат", callback_data="free"))
-    markup.add(types.InlineKeyboardButton("VIP 100р/мес", callback_data="vip"))
+    markup.add(types.InlineKeyboardButton("Платный канал", callback_data="vip"))
     markup.add(types.InlineKeyboardButton("Донат", url=DONATE_URL))
     markup.add(types.InlineKeyboardButton("Услуги", callback_data="services"))
     bot.send_message(message.chat.id, "Voice Inside Galaxy", reply_markup=markup)
