@@ -33,8 +33,8 @@ def callback(call):
     
     elif call.data == "vip":
         markup = types.InlineKeyboardMarkup()
-        markup.add(types.InlineKeyboardButton("Оплатить 100р", url=TRIBUTE_URL))
-        markup.add(types.InlineKeyboardButton("Проверить VIP", callback_data="check_vip"))
+        markup.add(types.InlineKeyboardButton("Оплатить", url=TRIBUTE_URL))
+        markup.add(types.InlineKeyboardButton("Проверить оплату", callback_data="check_vip"))
         bot.edit_message_text("VIP канал 100р/мес. Оплати добавлю!", call.message.chat.id, call.message.message_id, reply_markup=markup)
     
     elif call.data == "services":
