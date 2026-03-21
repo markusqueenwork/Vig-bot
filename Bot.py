@@ -2,10 +2,17 @@ import telebot
 from telebot import types
 import os
 from dotenv import load_dotenv
+import time
 
 load_dotenv()
 
 TOKEN = os.environ.get('BOT_TOKEN')
+if not TOKEN:
+    print("❌ ОШИБКА: BOT_TOKEN не найден в .env!")
+    exit(1)
+
+print(f"✅ Токен загружен: {TOKEN[:10]}...")
+
 CHANNEL_FREE = "-1001524100665"
 CHANNEL_VIP = "-1003727929609"
 CHAT_FREE = "https://t.me/vigcomm"
@@ -16,7 +23,7 @@ YOUTUBE_URL = "https://youtube.com/@v.i.galaxy?si=pDVT0XluD1LB7JiQ"
 TELEGRAM_URL = "https://t.me/voiceinsideglxy"
 
 bot = telebot.TeleBot(TOKEN)
-#bot.remove_webhook()
+# bot.remove_webhook()  # Отключено из-за проблем с сетью Bothost
 
 @bot.message_handler(commands=['start'])
 def start(message):
@@ -77,5 +84,11 @@ def callback(call):
             bot.answer_callback_query(call.id, "Бот не админ VIP!")
 
 if __name__ == "__main__":
-    print("Бот запущен!")
-    bot.polling(none_stop=True)
+    while True:
+        try:
+            print("🚀 Бот запущен!")
+            bot.polling(none_stop=True)
+        except Exception as e:
+            print(f"❌ Ошибка: {e}")
+            print("🔄 Перезапуск через 10 сек...")
+            time.sleep(10)
