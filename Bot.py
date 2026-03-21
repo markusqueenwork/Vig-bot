@@ -16,7 +16,7 @@ YOUTUBE_URL = "https://youtube.com/@v.i.galaxy?si=pDVT0XluD1LB7JiQ"
 TELEGRAM_URL = "https://t.me/voiceinsideglxy"
 
 bot = telebot.TeleBot(TOKEN)
-bot.remove_webhook()
+#bot.remove_webhook()
 
 @bot.message_handler(commands=['start'])
 def start(message):
