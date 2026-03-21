@@ -1,6 +1,9 @@
 import telebot
 from telebot import types
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 TOKEN = os.environ.get('BOT_TOKEN')
 CHANNEL_FREE = "-1001524100665"
