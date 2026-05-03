@@ -8,7 +8,7 @@ TOKEN = os.environ.get('BOT_TOKEN', '8294451648:AAFV-vMPVo4wHbkjjnN6W5_5Q39BxcTw
 CHANNEL_VIP = "-1003906026623"
 CHAT_VIP = "https://t.me/+aSbD7SmXaf8yNGIy"
 TELEGRAM_CHANNEL = "https://t.me/voiceinsideglxy"
-BACKEND_URL = os.environ.get('BACKEND_URL', 'https://vig-bot-backend.onrender.com')
+BACKEND_URL = "https://bot-back-cbug.onrender.com"
 
 # Тарифы
 TARIFFS = {
@@ -39,17 +39,16 @@ def callback(call):
     elif call.data == "check_vip":
         check_vip(call)
     elif call.data == "back_to_vip":
-        back_to_vip(call)
+        show_tariffs(call)
 
 
 def show_tariffs(call):
     """Показывает список тарифов"""
     markup = types.InlineKeyboardMarkup(row_width=1)
-    for key, tariff in TARIFFS.items():
-        markup.add(types.InlineKeyboardButton(
-            f"{tariff['name']} — {tariff['price']}р", 
-            callback_data=f"tariff_{key}"
-        ))
+    markup.add(types.InlineKeyboardButton("1 месяц — 300р", callback_data="tariff_1_month"))
+    markup.add(types.InlineKeyboardButton("3 месяца — 700р", callback_data="tariff_3_months"))
+    markup.add(types.InlineKeyboardButton("6 месяцев — 1500р", callback_data="tariff_6_months"))
+    markup.add(types.InlineKeyboardButton("1 год — 3500р", callback_data="tariff_1_year"))
     markup.add(types.InlineKeyboardButton("Проверить доступ", callback_data="check_vip"))
 
     bot.edit_message_text(
@@ -72,7 +71,6 @@ def select_tariff(call):
     user_id = call.from_user.id
 
     try:
-        # Создаём платёж через бэкенд
         response = requests.post(
             f"{BACKEND_URL}/api/bot/create-payment",
             json={
@@ -114,7 +112,6 @@ def check_vip(call):
     user_id = call.from_user.id
 
     try:
-        # Проверяем через бэкенд
         response = requests.get(
             f"{BACKEND_URL}/api/bot/subscription",
             params={"user_id": user_id},
@@ -133,11 +130,10 @@ def check_vip(call):
             )
         else:
             markup = types.InlineKeyboardMarkup(row_width=1)
-            for key, tariff in TARIFFS.items():
-                markup.add(types.InlineKeyboardButton(
-                    f"{tariff['name']} — {tariff['price']}р",
-                    callback_data=f"tariff_{key}"
-                ))
+            markup.add(types.InlineKeyboardButton("1 месяц — 300р", callback_data="tariff_1_month"))
+            markup.add(types.InlineKeyboardButton("3 месяца — 700р", callback_data="tariff_3_months"))
+            markup.add(types.InlineKeyboardButton("6 месяцев — 1500р", callback_data="tariff_6_months"))
+            markup.add(types.InlineKeyboardButton("1 год — 3500р", callback_data="tariff_1_year"))
 
             bot.edit_message_text(
                 "Подписка не найдена или истекла.\n\nВыберите срок подписки:",
@@ -148,11 +144,6 @@ def check_vip(call):
     except Exception as e:
         print(f"Ошибка проверки: {e}")
         bot.answer_callback_query(call.id, "Сервис временно недоступен")
-
-
-def back_to_vip(call):
-    """Возврат к выбору тарифов"""
-    show_tariffs(call)
 
 
 if __name__ == "__main__":
