@@ -1,13 +1,12 @@
-import asyncio
-import logging
+import telebot
+from telebot import types
 import sqlite3
 import uuid
-from datetime import date, timedelta
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
-import yookassa
 import os
+from datetime import date, timedelta, time
+import threading
+import schedule
+import yookassa
 
 # ==================== НАСТРОЙКИ ====================
 BOT_TOKEN = os.environ.get('BOT_TOKEN', '8294451648:AAFV-vMPVo4wHbkjjnN6W5_5Q39BxcTwCpg')
@@ -16,25 +15,22 @@ BOT_TOKEN = os.environ.get('BOT_TOKEN', '8294451648:AAFV-vMPVo4wHbkjjnN6W5_5Q39B
 YOOKASSA_SHOP_ID = "1319443"
 YOOKASSA_SECRET_KEY = "live_oERkhR1uKbbSskCwVY_SzaLbXH1O5P4egEL-toqLPJA"
 
-# Ссылка на ваш закрытый чат
+# Ссылка на ваш закрытый чат (постоянная, для fallback)
 INVITE_LINK = "https://t.me/+aSbD7SmXaf8yNGIy"
 
-# ID чата — вычислится автоматически
-CHAT_ID = None
+# ID чата — нужно получить вручную
+CHAT_ID = None  # ← замените на ID, когда получите (например, -1001234567890)
 
 # Настройки подписки
-PRICE = 300  # рублей
+PRICE = 300
 DAYS = 30
 
 # Username бота
 BOT_USERNAME = "voiceinsideglxy"
 
-# ==================== НАСТРОЙКА ====================
+# ==================== НАСТРОЙКА ЮKASSA ====================
 yookassa.Configuration.account_id = YOOKASSA_SHOP_ID
 yookassa.Configuration.secret_key = YOOKASSA_SECRET_KEY
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 # ==================== БАЗА ДАННЫХ ====================
 def init_db():
@@ -50,67 +46,49 @@ def init_db():
     conn.commit()
     conn.close()
 
+init_db()
+
+# Временное хранилище платежей
 pending_payments = {}
 
-# ==================== ПОЛУЧЕНИЕ ID ЧАТА ====================
-async def get_chat_id(app: Application):
-    global CHAT_ID
-    try:
-        invite = await app.bot.get_chat(INVITE_LINK)
-        CHAT_ID = invite.id
-        logger.info(f"✅ ID чата: {CHAT_ID}")
-    except Exception as e:
-        logger.error(f"❌ Не удалось получить ID чата: {e}")
+# ==================== БОТ ====================
+bot = telebot.TeleBot(BOT_TOKEN)
+bot.remove_webhook()
 
 # ==================== КОМАНДЫ ====================
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    keyboard = [
-        [InlineKeyboardButton("🔒 Получить доступ (300 руб./30 дн.)", callback_data="pay")],
-        [InlineKeyboardButton("📋 Моя подписка", callback_data="my_sub")]
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
-    await update.message.reply_text(
-        "Voice Inside Galaxy\n\n"
-        "Доступ в закрытый чат — 300 руб./30 дней.",
-        reply_markup=reply_markup
+@bot.message_handler(commands=['start'])
+def start(message):
+    keyboard = types.InlineKeyboardMarkup(row_width=1)
+    keyboard.add(
+        types.InlineKeyboardButton("🔒 Получить доступ (300 руб./30 дн.)", callback_data="pay"),
+        types.InlineKeyboardButton("📋 Моя подписка", callback_data="my_sub")
+    )
+    bot.send_message(
+        message.chat.id,
+        "Voice Inside Galaxy\n\nДоступ в закрытый чат — 300 руб./30 дней.",
+        reply_markup=keyboard
     )
 
 
-async def my_sub(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-
-    user_id = query.from_user.id
-    conn = sqlite3.connect("bot.db")
-    cursor = conn.cursor()
-    cursor.execute("SELECT expire_date FROM subscriptions WHERE user_id = ?", (user_id,))
-    row = cursor.fetchone()
-    conn.close()
-
-    if row:
-        expire_date = date.fromisoformat(row[0])
-        today = date.today()
-        if expire_date >= today:
-            days_left = (expire_date - today).days
-            await query.edit_message_text(
-                f"✅ Подписка активна\n"
-                f"Осталось дней: {days_left}\n"
-                f"Действует до: {expire_date.strftime('%d.%m.%Y')}"
-            )
-        else:
-            await query.edit_message_text("❌ Подписка истекла. Нажмите /start чтобы продлить.")
-    else:
-        await query.edit_message_text("У вас нет активной подписки. Нажмите /start чтобы оформить.")
+@bot.callback_query_handler(func=lambda call: True)
+def callback(call):
+    if call.data == "pay":
+        pay(call)
+    elif call.data == "check_payment":
+        check_payment(call)
+    elif call.data == "my_sub":
+        my_sub(call)
+    elif call.data == "back_to_start":
+        back_to_start(call)
 
 
-async def pay(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
+def pay(call):
+    """Создание платежа"""
+    user_id = call.from_user.id
+    user_name = call.from_user.first_name
 
-    user_id = query.from_user.id
-
+    # Создаём платёж в ЮKassa
     idempotency_key = str(uuid.uuid4())
     payment = yookassa.Payment.create({
         "amount": {
@@ -130,134 +108,173 @@ async def pay(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     pending_payments[user_id] = payment.id
 
-    keyboard = [
-        [InlineKeyboardButton("💳 Перейти к оплате", url=payment.confirmation.confirmation_url)],
-        [InlineKeyboardButton("✅ Я оплатил", callback_data="check_payment")],
-        [InlineKeyboardButton("◀️ Назад", callback_data="back_to_start")]
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
+    keyboard = types.InlineKeyboardMarkup(row_width=1)
+    keyboard.add(
+        types.InlineKeyboardButton("💳 Перейти к оплате", url=payment.confirmation.confirmation_url),
+        types.InlineKeyboardButton("✅ Я оплатил", callback_data="check_payment"),
+        types.InlineKeyboardButton("◀️ Назад", callback_data="back_to_start")
+    )
 
-    await query.edit_message_text(
+    bot.edit_message_text(
         f"💰 Доступ в закрытый чат\n\n"
         f"Срок: {DAYS} дней\n"
         f"Цена: {PRICE} руб.\n\n"
         f"1. Нажмите «Перейти к оплате»\n"
         f"2. Оплатите\n"
         f"3. Вернитесь и нажмите «Я оплатил»",
-        reply_markup=reply_markup,
+        call.message.chat.id,
+        call.message.message_id,
+        reply_markup=keyboard,
         parse_mode="HTML"
     )
 
 
-async def check_payment(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-
-    user_id = query.from_user.id
+def check_payment(call):
+    """Проверка статуса платежа"""
+    user_id = call.from_user.id
     payment_id = pending_payments.get(user_id)
 
     if not payment_id:
-        await query.edit_message_text("❌ Нет активного платежа. Нажмите /start.")
+        bot.edit_message_text(
+            "❌ Нет активного платежа. Нажмите /start.",
+            call.message.chat.id,
+            call.message.message_id
+        )
         return
 
-    payment = yookassa.Payment.find_one(payment_id)
+    try:
+        payment = yookassa.Payment.find_one(payment_id)
 
-    if payment.status == "succeeded":
-        del pending_payments[user_id]
+        if payment.status == "succeeded":
+            del pending_payments[user_id]
 
-        conn = sqlite3.connect("bot.db")
-        cursor = conn.cursor()
-        new_expire = date.today() + timedelta(days=DAYS)
-        cursor.execute("""
-            INSERT INTO subscriptions (user_id, expire_date, is_reminded)
-            VALUES (?, ?, 0)
-            ON CONFLICT(user_id) DO UPDATE SET expire_date = ?, is_reminded = 0
-        """, (user_id, new_expire, new_expire))
-        conn.commit()
-        conn.close()
+            # Сохраняем в базу
+            conn = sqlite3.connect("bot.db")
+            cursor = conn.cursor()
+            new_expire = date.today() + timedelta(days=DAYS)
+            cursor.execute("""
+                INSERT INTO subscriptions (user_id, expire_date, is_reminded)
+                VALUES (?, ?, 0)
+                ON CONFLICT(user_id) DO UPDATE SET expire_date = ?, is_reminded = 0
+            """, (user_id, new_expire, new_expire))
+            conn.commit()
+            conn.close()
 
-        if CHAT_ID:
-            try:
-                invite_link = await context.bot.create_chat_invite_link(
-                    chat_id=CHAT_ID,
-                    member_limit=1
-                )
-                link = invite_link.invite_link
-            except Exception as e:
-                logger.error(f"Ошибка создания ссылки: {e}")
-                link = "⚠️ Не удалось создать ссылку. Обратитесь в поддержку."
+            # Создаём ссылку на чат
+            if CHAT_ID:
+                try:
+                    invite_link = bot.create_chat_invite_link(
+                        chat_id=CHAT_ID,
+                        member_limit=1
+                    )
+                    link = invite_link.invite_link
+                except Exception as e:
+                    print(f"Ошибка создания ссылки: {e}")
+                    link = "⚠️ Не удалось создать ссылку.\nВот постоянная ссылка: " + INVITE_LINK
+            else:
+                link = INVITE_LINK
+
+            bot.edit_message_text(
+                f"✅ Оплата прошла!\n"
+                f"Подписка до: {new_expire.strftime('%d.%m.%Y')}\n\n"
+                f"🔗 {link}\n\n"
+                f"Ссылка одноразовая (если сгенерирована). /start — главное меню.",
+                call.message.chat.id,
+                call.message.message_id
+            )
         else:
-            link = INVITE_LINK
-
-        await query.edit_message_text(
-            f"✅ Оплата прошла!\n"
-            f"Подписка до: {new_expire.strftime('%d.%m.%Y')}\n\n"
-            f"🔗 {link}\n\n"
-            f"Ссылка одноразовая. /start — главное меню."
+            bot.edit_message_text(
+                "⏳ Платёж не найден.\n\n"
+                "Если оплатили — подождите пару минут.\n"
+                "Нажмите /start чтобы проверить снова.",
+                call.message.chat.id,
+                call.message.message_id
+            )
+    except Exception as e:
+        print(f"Ошибка проверки платежа: {e}")
+        bot.edit_message_text(
+            "⏳ Платёж не найден.\nПопробуйте позже.",
+            call.message.chat.id,
+            call.message.message_id
         )
+
+
+def my_sub(call):
+    """Проверка статуса подписки"""
+    user_id = call.from_user.id
+    conn = sqlite3.connect("bot.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT expire_date FROM subscriptions WHERE user_id = ?", (user_id,))
+    row = cursor.fetchone()
+    conn.close()
+
+    if row:
+        expire_date = date.fromisoformat(row[0])
+        today = date.today()
+        if expire_date >= today:
+            days_left = (expire_date - today).days
+            bot.edit_message_text(
+                f"✅ Подписка активна\n"
+                f"Осталось дней: {days_left}\n"
+                f"Действует до: {expire_date.strftime('%d.%m.%Y')}",
+                call.message.chat.id,
+                call.message.message_id
+            )
+        else:
+            bot.edit_message_text(
+                "❌ Подписка истекла. Нажмите /start чтобы продлить.",
+                call.message.chat.id,
+                call.message.message_id
+            )
     else:
-        await query.edit_message_text(
-            "⏳ Платёж не найден.\n\n"
-            "Если оплатили — подождите пару минут.\n"
-            "Нажмите /start чтобы проверить снова."
+        bot.edit_message_text(
+            "У вас нет активной подписки. Нажмите /start чтобы оформить.",
+            call.message.chat.id,
+            call.message.message_id
         )
 
 
-async def back_to_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-
-    keyboard = [
-        [InlineKeyboardButton("🔒 Получить доступ (300 руб./30 дн.)", callback_data="pay")],
-        [InlineKeyboardButton("📋 Моя подписка", callback_data="my_sub")]
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
-    await query.edit_message_text(
-        "Voice Inside Galaxy\n\n"
-        "Доступ в закрытый чат — 300 руб./30 дней.",
-        reply_markup=reply_markup
+def back_to_start(call):
+    """Возврат в главное меню"""
+    keyboard = types.InlineKeyboardMarkup(row_width=1)
+    keyboard.add(
+        types.InlineKeyboardButton("🔒 Получить доступ (300 руб./30 дн.)", callback_data="pay"),
+        types.InlineKeyboardButton("📋 Моя подписка", callback_data="my_sub")
+    )
+    bot.edit_message_text(
+        "Voice Inside Galaxy\n\nДоступ в закрытый чат — 300 руб./30 дней.",
+        call.message.chat.id,
+        call.message.message_id,
+        reply_markup=keyboard
     )
 
 
 # ==================== ПРОВЕРКА ПОДПИСОК ====================
 
-async def check_subscriptions(context: ContextTypes.DEFAULT_TYPE):
-    """
-    Эта функция запускается раз в день (в 10:00 утра).
-    Проверяет всех пользователей в базе:
-    - У кого срок истёк → кикает из чата и удаляет из базы
-    - У кого срок истекает через 3 дня → отправляет напоминание
-    """
+def check_subscriptions():
+    """Ежедневная проверка подписок"""
     if not CHAT_ID:
-        logger.warning("❌ Невозможно проверить подписки: ID чата неизвестен")
+        print("❌ CHAT_ID не задан. Пропускаю проверку.")
         return
 
     conn = sqlite3.connect("bot.db")
     cursor = conn.cursor()
     today = date.today()
 
-    # 1. КИКАЕМ ПРОСРОЧЕННЫХ — у кого expire_date < сегодня
+    # Кикаем просроченных
     cursor.execute("SELECT user_id FROM subscriptions WHERE expire_date < ?", (today,))
     to_kick = cursor.fetchall()
 
     for (user_id,) in to_kick:
         try:
-            # Баним (выгоняем из чата)
-            await context.bot.ban_chat_member(chat_id=CHAT_ID, user_id=user_id)
-            # Сразу разбаниваем — чтобы мог вернуться, если заплатит снова
-            await context.bot.unban_chat_member(chat_id=CHAT_ID, user_id=user_id)
-            # Уведомляем
-            await context.bot.send_message(
-                user_id,
-                "❌ Подписка истекла. Доступ в чат закрыт.\nНажмите /start чтобы продлить."
-            )
+            bot.ban_chat_member(chat_id=CHAT_ID, user_id=user_id)
+            bot.unban_chat_member(chat_id=CHAT_ID, user_id=user_id)
+            bot.send_message(user_id, "❌ Подписка истекла. Доступ в чат закрыт.\nНажмите /start чтобы продлить.")
         except Exception as e:
-            logger.warning(f"Не удалось кикнуть {user_id}: {e}")
-        # Удаляем запись из базы
+            print(f"Не удалось кикнуть {user_id}: {e}")
         cursor.execute("DELETE FROM subscriptions WHERE user_id = ?", (user_id,))
 
-    # 2. НАПОМИНАЕМ ТЕМ, У КОГО ОСТАЛОСЬ 3 ДНЯ
+    # Напоминаем за 3 дня
     remind_date = today + timedelta(days=3)
     cursor.execute("""
         SELECT user_id FROM subscriptions
@@ -266,59 +283,32 @@ async def check_subscriptions(context: ContextTypes.DEFAULT_TYPE):
     to_remind = cursor.fetchall()
 
     for (user_id,) in to_remind:
-        keyboard = InlineKeyboardMarkup([[
-            InlineKeyboardButton("💳 Продлить подписку", callback_data="pay")
-        ]])
+        keyboard = types.InlineKeyboardMarkup()
+        keyboard.add(types.InlineKeyboardButton("💳 Продлить подписку", callback_data="pay"))
         try:
-            await context.bot.send_message(
+            bot.send_message(
                 user_id,
                 "⚠️ Подписка закончится через 3 дня.\nПродлите, чтобы не потерять доступ.",
                 reply_markup=keyboard
             )
-            # Помечаем, что напомнили — чтобы не спамить каждый день
             cursor.execute("UPDATE subscriptions SET is_reminded = 1 WHERE user_id = ?", (user_id,))
         except Exception as e:
-            logger.warning(f"Не удалось напомнить {user_id}: {e}")
+            print(f"Не удалось напомнить {user_id}: {e}")
 
     conn.commit()
     conn.close()
 
 
-# ==================== ОБРАБОТЧИКИ ====================
+# Запуск планировщика в отдельном потоке
+def run_scheduler():
+    schedule.every().day.at("10:00").do(check_subscriptions)
+    while True:
+        schedule.run_pending()
+        time.sleep(60)
 
-async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    data = query.data
-
-    if data == "pay":
-        await pay(update, context)
-    elif data == "check_payment":
-        await check_payment(update, context)
-    elif data == "my_sub":
-        await my_sub(update, context)
-    elif data == "back_to_start":
-        await back_to_start(update, context)
-
+threading.Thread(target=run_scheduler, daemon=True).start()
 
 # ==================== ЗАПУСК ====================
 
-def main():
-    app = Application.builder().token(BOT_TOKEN).build()
-
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CallbackQueryHandler(button_handler))
-
-    # При старте получаем ID чата
-    app.job_queue.run_once(lambda ctx: asyncio.create_task(get_chat_id(app)), when=1)
-
-    # Планировщик — проверка раз в день в 10:00
-    scheduler = AsyncIOScheduler()
-    scheduler.add_job(check_subscriptions, 'cron', hour=10, minute=0, args=[app])
-    scheduler.start()
-
-    print("Бот запущен!")
-    app.run_polling()
-
-if __name__ == "__main__":
-    init_db()
-    main()
+print("Бот запущен!")
+bot.polling(none_stop=True)
