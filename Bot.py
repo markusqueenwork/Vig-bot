@@ -15,11 +15,12 @@ BOT_TOKEN = os.environ.get('BOT_TOKEN', '8294451648:AAFV-vMPVo4wHbkjjnN6W5_5Q39B
 YOOKASSA_SHOP_ID = "1319443"
 YOOKASSA_SECRET_KEY = "live_oERkhR1uKbbSskCwVY_SzaLbXH1O5P4egEL-toqLPJA"
 
-# Ссылка на ваш закрытый чат (постоянная, для fallback)
+# Ссылки
 INVITE_LINK = "https://t.me/+aSbD7SmXaf8yNGIy"
+TELEGRAM_CHANNEL = "https://t.me/voiceinsideglxy"
 
-# ID чата — нужно получить вручную
-CHAT_ID = None  # ← замените на ID, когда получите (например, -1001234567890)
+# ID чата
+CHAT_ID = None
 
 # Настройки подписки
 PRICE = 300
@@ -48,32 +49,37 @@ def init_db():
 
 init_db()
 
-# Временное хранилище платежей
 pending_payments = {}
 
 # ==================== БОТ ====================
 bot = telebot.TeleBot(BOT_TOKEN)
 bot.remove_webhook()
 
-# ==================== КОМАНДЫ ====================
+# ==================== ГЛАВНОЕ МЕНЮ ====================
 
 @bot.message_handler(commands=['start'])
 def start(message):
     keyboard = types.InlineKeyboardMarkup(row_width=1)
     keyboard.add(
-        types.InlineKeyboardButton("🔒 Получить доступ (300 руб./30 дн.)", callback_data="pay"),
-        types.InlineKeyboardButton("📋 Моя подписка", callback_data="my_sub")
+        types.InlineKeyboardButton("📢 Telegram канал", url=TELEGRAM_CHANNEL),
+        types.InlineKeyboardButton("⭐️ Voice Inside Galaxy +", callback_data="pay_info")
     )
     bot.send_message(
         message.chat.id,
-        "Voice Inside Galaxy\n\nДоступ в закрытый чат — 300 руб./30 дней.",
-        reply_markup=keyboard
+        "🎙 <b>Voice Inside Galaxy</b>\n\n"
+        "Выберите действие:",
+        reply_markup=keyboard,
+        parse_mode="HTML"
     )
 
 
+# ==================== ОБРАБОТКА КНОПОК ====================
+
 @bot.callback_query_handler(func=lambda call: True)
 def callback(call):
-    if call.data == "pay":
+    if call.data == "pay_info":
+        pay_info(call)
+    elif call.data == "pay":
         pay(call)
     elif call.data == "check_payment":
         check_payment(call)
@@ -83,12 +89,33 @@ def callback(call):
         back_to_start(call)
 
 
+def pay_info(call):
+    """Информация о подписке"""
+    keyboard = types.InlineKeyboardMarkup(row_width=1)
+    keyboard.add(
+        types.InlineKeyboardButton("💳 Оплатить 300₽", callback_data="pay"),
+        types.InlineKeyboardButton("✅ Проверить оплату", callback_data="check_payment"),
+        types.InlineKeyboardButton("📋 Моя подписка", callback_data="my_sub"),
+        types.InlineKeyboardButton("◀️ Назад", callback_data="back_to_start")
+    )
+    bot.edit_message_text(
+        "⭐️ <b>Voice Inside Galaxy +</b>\n\n"
+        "Закрытое сообщество с уникальным контентом.\n\n"
+        "💎 Доступ: 300₽ / 30 дней\n"
+        "🔒 Полностью приватный чат\n"
+        "🎯 Эксклюзивный контент\n\n"
+        "Нажмите «Оплатить» для оформления подписки 👇",
+        call.message.chat.id,
+        call.message.message_id,
+        reply_markup=keyboard,
+        parse_mode="HTML"
+    )
+
+
 def pay(call):
     """Создание платежа"""
     user_id = call.from_user.id
-    user_name = call.from_user.first_name
 
-    # Создаём платёж в ЮKassa
     idempotency_key = str(uuid.uuid4())
     payment = yookassa.Payment.create({
         "amount": {
@@ -100,7 +127,7 @@ def pay(call):
             "return_url": f"https://t.me/{BOT_USERNAME}"
         },
         "capture": True,
-        "description": f"Доступ в закрытый чат на {DAYS} дн.",
+        "description": f"Voice Inside Galaxy + на {DAYS} дн.",
         "metadata": {
             "telegram_user_id": str(user_id)
         }
@@ -112,11 +139,11 @@ def pay(call):
     keyboard.add(
         types.InlineKeyboardButton("💳 Перейти к оплате", url=payment.confirmation.confirmation_url),
         types.InlineKeyboardButton("✅ Я оплатил", callback_data="check_payment"),
-        types.InlineKeyboardButton("◀️ Назад", callback_data="back_to_start")
+        types.InlineKeyboardButton("◀️ Назад", callback_data="pay_info")
     )
 
     bot.edit_message_text(
-        f"💰 Доступ в закрытый чат\n\n"
+        f"💎 <b>Подписка Voice Inside Galaxy +</b>\n\n"
         f"Срок: {DAYS} дней\n"
         f"Цена: {PRICE} руб.\n\n"
         f"1. Нажмите «Перейти к оплате»\n"
@@ -136,7 +163,7 @@ def check_payment(call):
 
     if not payment_id:
         bot.edit_message_text(
-            "❌ Нет активного платежа. Нажмите /start.",
+            "❌ Нет активного платежа.",
             call.message.chat.id,
             call.message.message_id
         )
@@ -148,7 +175,6 @@ def check_payment(call):
         if payment.status == "succeeded":
             del pending_payments[user_id]
 
-            # Сохраняем в базу
             conn = sqlite3.connect("bot.db")
             cursor = conn.cursor()
             new_expire = date.today() + timedelta(days=DAYS)
@@ -160,7 +186,6 @@ def check_payment(call):
             conn.commit()
             conn.close()
 
-            # Создаём ссылку на чат
             if CHAT_ID:
                 try:
                     invite_link = bot.create_chat_invite_link(
@@ -168,32 +193,31 @@ def check_payment(call):
                         member_limit=1
                     )
                     link = invite_link.invite_link
-                except Exception as e:
-                    print(f"Ошибка создания ссылки: {e}")
-                    link = "⚠️ Не удалось создать ссылку.\nВот постоянная ссылка: " + INVITE_LINK
+                except:
+                    link = INVITE_LINK
             else:
                 link = INVITE_LINK
 
             bot.edit_message_text(
-                f"✅ Оплата прошла!\n"
+                f"✅ <b>Оплата прошла!</b>\n\n"
                 f"Подписка до: {new_expire.strftime('%d.%m.%Y')}\n\n"
-                f"🔗 {link}\n\n"
-                f"Ссылка одноразовая (если сгенерирована). /start — главное меню.",
+                f"🔗 <b>Ссылка на чат:</b>\n{link}\n\n"
+                f"Ссылка одноразовая. Не передавайте её никому.",
                 call.message.chat.id,
-                call.message.message_id
+                call.message.message_id,
+                parse_mode="HTML"
             )
         else:
             bot.edit_message_text(
                 "⏳ Платёж не найден.\n\n"
-                "Если оплатили — подождите пару минут.\n"
-                "Нажмите /start чтобы проверить снова.",
+                "Если вы оплатили — подождите пару минут и попробуйте снова.",
                 call.message.chat.id,
                 call.message.message_id
             )
     except Exception as e:
-        print(f"Ошибка проверки платежа: {e}")
+        print(f"Ошибка проверки: {e}")
         bot.edit_message_text(
-            "⏳ Платёж не найден.\nПопробуйте позже.",
+            "⏳ Платёж пока не найден. Попробуйте позже.",
             call.message.chat.id,
             call.message.message_id
         )
@@ -214,21 +238,22 @@ def my_sub(call):
         if expire_date >= today:
             days_left = (expire_date - today).days
             bot.edit_message_text(
-                f"✅ Подписка активна\n"
+                f"✅ <b>Подписка активна</b>\n\n"
                 f"Осталось дней: {days_left}\n"
                 f"Действует до: {expire_date.strftime('%d.%m.%Y')}",
                 call.message.chat.id,
-                call.message.message_id
+                call.message.message_id,
+                parse_mode="HTML"
             )
         else:
             bot.edit_message_text(
-                "❌ Подписка истекла. Нажмите /start чтобы продлить.",
+                "❌ Подписка истекла.",
                 call.message.chat.id,
                 call.message.message_id
             )
     else:
         bot.edit_message_text(
-            "У вас нет активной подписки. Нажмите /start чтобы оформить.",
+            "У вас нет активной подписки.",
             call.message.chat.id,
             call.message.message_id
         )
@@ -238,30 +263,29 @@ def back_to_start(call):
     """Возврат в главное меню"""
     keyboard = types.InlineKeyboardMarkup(row_width=1)
     keyboard.add(
-        types.InlineKeyboardButton("🔒 Получить доступ (300 руб./30 дн.)", callback_data="pay"),
-        types.InlineKeyboardButton("📋 Моя подписка", callback_data="my_sub")
+        types.InlineKeyboardButton("📢 Telegram канал", url=TELEGRAM_CHANNEL),
+        types.InlineKeyboardButton("⭐️ Voice Inside Galaxy +", callback_data="pay_info")
     )
     bot.edit_message_text(
-        "Voice Inside Galaxy\n\nДоступ в закрытый чат — 300 руб./30 дней.",
+        "🎙 <b>Voice Inside Galaxy</b>\n\n"
+        "Выберите действие:",
         call.message.chat.id,
         call.message.message_id,
-        reply_markup=keyboard
+        reply_markup=keyboard,
+        parse_mode="HTML"
     )
 
 
 # ==================== ПРОВЕРКА ПОДПИСОК ====================
 
 def check_subscriptions():
-    """Ежедневная проверка подписок"""
     if not CHAT_ID:
-        print("❌ CHAT_ID не задан. Пропускаю проверку.")
         return
 
     conn = sqlite3.connect("bot.db")
     cursor = conn.cursor()
     today = date.today()
 
-    # Кикаем просроченных
     cursor.execute("SELECT user_id FROM subscriptions WHERE expire_date < ?", (today,))
     to_kick = cursor.fetchall()
 
@@ -269,12 +293,11 @@ def check_subscriptions():
         try:
             bot.ban_chat_member(chat_id=CHAT_ID, user_id=user_id)
             bot.unban_chat_member(chat_id=CHAT_ID, user_id=user_id)
-            bot.send_message(user_id, "❌ Подписка истекла. Доступ в чат закрыт.\nНажмите /start чтобы продлить.")
-        except Exception as e:
-            print(f"Не удалось кикнуть {user_id}: {e}")
+            bot.send_message(user_id, "❌ Подписка истекла. Доступ в чат закрыт.")
+        except:
+            pass
         cursor.execute("DELETE FROM subscriptions WHERE user_id = ?", (user_id,))
 
-    # Напоминаем за 3 дня
     remind_date = today + timedelta(days=3)
     cursor.execute("""
         SELECT user_id FROM subscriptions
@@ -292,14 +315,13 @@ def check_subscriptions():
                 reply_markup=keyboard
             )
             cursor.execute("UPDATE subscriptions SET is_reminded = 1 WHERE user_id = ?", (user_id,))
-        except Exception as e:
-            print(f"Не удалось напомнить {user_id}: {e}")
+        except:
+            pass
 
     conn.commit()
     conn.close()
 
 
-# Запуск планировщика в отдельном потоке
 def run_scheduler():
     schedule.every().day.at("10:00").do(check_subscriptions)
     while True:
