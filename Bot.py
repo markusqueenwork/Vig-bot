@@ -10,7 +10,7 @@ TELEGRAM_CHANNEL = "https://t.me/voiceinsideglxy"
 BACKEND_URL = "https://voiceinside-backend.onrender.com"
 
 TARIFFS = {
-    "1_month": {"name": "1 месяц", "price": 1, "days": 30},
+    "1_month": {"name": "1 месяц", "price": 300, "days": 30},
     "3_months": {"name": "3 месяца", "price": 700, "days": 90},
     "6_months": {"name": "6 месяцев", "price": 1500, "days": 180},
     "1_year": {"name": "1 год", "price": 3500, "days": 365}
@@ -19,7 +19,6 @@ TARIFFS = {
 bot = telebot.TeleBot(TOKEN)
 bot.remove_webhook()
 
-# Храним ID платежей
 pending_payments = {}
 
 @bot.message_handler(commands=['start'])
@@ -106,79 +105,67 @@ def select_tariff(call):
 
 def check_vip(call):
     user_id = call.from_user.id
-
-    # Сначала проверяем, есть ли незавершённый платёж
     payment_id = pending_payments.get(user_id)
 
-    if payment_id:
+    if not payment_id:
         try:
-            # Проверяем статус платежа через бэкенд
             response = requests.get(
-                f"{BACKEND_URL}/api/payment/{payment_id}",
+                f"{BACKEND_URL}/api/bot/subscription",
+                params={"user_id": user_id},
                 timeout=10
             )
             data = response.json()
 
-            if data.get("success") and data.get("status") == "succeeded":
-                # Платёж прошёл, запоминаем
-                del pending_payments[user_id]
+            if data.get("active"):
+                bot.edit_message_text(
+                    f"Подписка активна.\n"
+                    f"Действует до: {data['expire_date']}\n"
+                    f"Осталось дней: {data['days_left']}\n\n"
+                    f"Доступ к чату: {CHAT_VIP}",
+                    call.message.chat.id,
+                    call.message.message_id
+                )
+            else:
+                show_tariffs(call)
         except:
-            pass
+            bot.answer_callback_query(call.id, "Сервис временно недоступен")
+        return
 
-    # Проверяем подписку в базе
     try:
         response = requests.get(
-            f"{BACKEND_URL}/api/bot/subscription",
-            params={"user_id": user_id},
+            f"{BACKEND_URL}/api/payment/{payment_id}",
             timeout=10
         )
         data = response.json()
 
-        if data.get("active"):
+        if data.get("status") == "succeeded":
+            del pending_payments[user_id]
+
+            try:
+                requests.post(
+                    f"{BACKEND_URL}/api/bot/confirm-payment",
+                    json={
+                        "paymentId": payment_id,
+                        "userId": user_id
+                    },
+                    timeout=10
+                )
+            except:
+                pass
+
             bot.edit_message_text(
-                f"Подписка активна.\n"
-                f"Действует до: {data['expire_date']}\n"
-                f"Осталось дней: {data['days_left']}\n\n"
-                f"Доступ к чату: {CHAT_VIP}",
+                f"Оплата прошла.\n\n"
+                f"Доступ к чату: {CHAT_VIP}\n\n"
+                f"Если ссылка не работает, обратитесь в поддержку.",
                 call.message.chat.id,
                 call.message.message_id
             )
         else:
-            # Если вебхук не сработал, но платёж прошёл — проверяем ещё раз
-            if payment_id:
-                try:
-                    response2 = requests.get(
-                        f"{BACKEND_URL}/api/payment/{payment_id}",
-                        timeout=10
-                    )
-                    data2 = response2.json()
-
-                    if data2.get("success") and data2.get("status") == "succeeded":
-                        # Платёж точно прошёл, но вебхук не записал
-                        # Даём ссылку вручную
-                        bot.edit_message_text(
-                            f"Оплата прошла.\n\n"
-                            f"Доступ к чату: {CHAT_VIP}\n\n"
-                            f"Если ссылка не работает, обратитесь в поддержку.",
-                            call.message.chat.id,
-                            call.message.message_id
-                        )
-                        del pending_payments[user_id]
-                        return
-                except:
-                    pass
-
-            markup = types.InlineKeyboardMarkup(row_width=1)
-            markup.add(types.InlineKeyboardButton("1 месяц — 300р", callback_data="tariff_1_month"))
-            markup.add(types.InlineKeyboardButton("3 месяца — 700р", callback_data="tariff_3_months"))
-            markup.add(types.InlineKeyboardButton("6 месяцев — 1500р", callback_data="tariff_6_months"))
-            markup.add(types.InlineKeyboardButton("1 год — 3500р", callback_data="tariff_1_year"))
-
             bot.edit_message_text(
-                "Подписка не найдена или истекла.\n\nВыберите срок подписки:",
+                "Оплата ещё не прошла.\n\n"
+                "Если вы оплатили — подождите минуту и нажмите кнопку снова.",
                 call.message.chat.id,
-                call.message.message_id,
-                reply_markup=markup
+                call.message.message_id
             )
     except Exception as e:
         print(f"Ошибка проверки: {e}")
