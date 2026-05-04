@@ -8,7 +8,7 @@ TOKEN = os.environ.get('BOT_TOKEN', '8294451648:AAFV-vMPVo4wHbkjjnN6W5_5Q39BxcTw
 CHANNEL_VIP = "-1003906026623"
 CHAT_VIP = "https://t.me/+aSbD7SmXaf8yNGIy"
 TELEGRAM_CHANNEL = "https://t.me/voiceinsideglxy"
-BACKEND_URL = "https://yookassa-backend.onrender.com"
+BACKEND_URL = "https://voiceinside-backend.onrender.com"
 
 # Тарифы
 TARIFFS = {
