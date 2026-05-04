@@ -12,7 +12,7 @@ BACKEND_URL = "https://voiceinside-backend.onrender.com"
 
 # Тарифы
 TARIFFS = {
-    "1_month": {"name": "1 месяц", "price": 300, "days": 30},
+    "1_month": {"name": "1 месяц", "price": 1, "days": 30},
     "3_months": {"name": "3 месяца", "price": 700, "days": 90},
     "6_months": {"name": "6 месяцев", "price": 1500, "days": 180},
     "1_year": {"name": "1 год", "price": 3500, "days": 365}
