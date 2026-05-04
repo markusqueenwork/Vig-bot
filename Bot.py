@@ -8,7 +8,7 @@ TOKEN = os.environ.get('BOT_TOKEN', '8294451648:AAFV-vMPVo4wHbkjjnN6W5_5Q39BxcTw
 CHANNEL_VIP = "-1003906026623"
 CHAT_VIP = "https://t.me/+aSbD7SmXaf8yNGIy"
 TELEGRAM_CHANNEL = "https://t.me/voiceinsideglxy"
-BACKEND_URL = "https://bot-back-cbug.onrender.com"
+BACKEND_URL = "https://yookassa-backend.onrender.com"
 
 # Тарифы
 TARIFFS = {
@@ -43,7 +43,6 @@ def callback(call):
 
 
 def show_tariffs(call):
-    """Показывает список тарифов"""
     markup = types.InlineKeyboardMarkup(row_width=1)
     markup.add(types.InlineKeyboardButton("1 месяц — 300р", callback_data="tariff_1_month"))
     markup.add(types.InlineKeyboardButton("3 месяца — 700р", callback_data="tariff_3_months"))
@@ -60,7 +59,6 @@ def show_tariffs(call):
 
 
 def select_tariff(call):
-    """Создаёт платёж через бэкенд"""
     tariff_key = call.data.replace("tariff_", "")
     tariff = TARIFFS.get(tariff_key)
 
@@ -108,7 +106,6 @@ def select_tariff(call):
 
 
 def check_vip(call):
-    """Проверяет доступ через бэкенд"""
     user_id = call.from_user.id
 
     try:
