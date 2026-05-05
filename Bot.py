@@ -16,7 +16,7 @@ TARIFFS = {
     "1_year": {"name": "1 год", "price": 3500, "days": 365}
 }
 
-bot = telebot.TeleBot(TOKEN)
+bot = telebot.TeleBot(BOT_TOKEN)
 bot.remove_webhook()
 
 pending_payments = {}
