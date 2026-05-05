@@ -3,7 +3,7 @@ from telebot import types
 import requests
 import os
 
-TOKEN = os.environ.get('BOT_TOKEN', '8294451648:AAFV-vMPVo4wHbkjjnN6W5_5Q39BxcTwCpg')
+TOKEN = os.environ.get('BOT_TOKEN', '8294451648:AAHr9L5JRtqfH-lgolc3XkIZgaL2Mo653uU')
 CHANNEL_VIP = "-1003906026623"
 CHAT_VIP = "https://t.me/+aSbD7SmXaf8yNGIy"
 TELEGRAM_CHANNEL = "https://t.me/voiceinsideglxy"
