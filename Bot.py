@@ -9,6 +9,10 @@ CHAT_VIP = "https://t.me/+aSbD7SmXaf8yNGIy"
 TELEGRAM_CHANNEL = "https://t.me/voiceinsideglxy"
 BACKEND_URL = "https://voiceinside-backend.onrender.com"
 
+# Чат с песнями и канал для проверки
+SONGS_CHAT_ID = -1003703009385
+CHANNEL_USERNAME = "@voiceinsideglxy"
+
 TARIFFS = {
     "1_month": {"name": "1 месяц", "price": 300, "days": 30},
     "3_months": {"name": "3 месяца", "price": 700, "days": 90},
@@ -21,6 +25,23 @@ bot.remove_webhook()
 
 pending_payments = {}
 
+# ==================== ПРОВЕРКА ПОДПИСКИ НА КАНАЛ ====================
+@bot.message_handler(func=lambda message: message.chat.id == SONGS_CHAT_ID)
+def check_channel_subscription(message):
+    user_id = message.from_user.id
+    username = message.from_user.username or f"user_{user_id}"
+
+    try:
+        status = bot.get_chat_member(CHANNEL_USERNAME, user_id).status
+        if status not in ['member', 'administrator', 'creator']:
+            bot.reply_to(
+                message,
+                f"@{username}, вы не подписаны на {CHANNEL_USERNAME}."
+            )
+    except:
+        pass
+
+# ==================== ГЛАВНОЕ МЕНЮ ====================
 @bot.message_handler(commands=['start'])
 def start(message):
     markup = types.InlineKeyboardMarkup(row_width=1)
