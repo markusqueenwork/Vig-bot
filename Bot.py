@@ -2,6 +2,8 @@ import telebot
 from telebot import types
 import requests
 import os
+import sqlite3
+from datetime import datetime
 
 BOT_TOKEN = os.environ.get('BOT_TOKEN')
 CHANNEL_VIP = "-1003906026623"
@@ -9,7 +11,6 @@ CHAT_VIP = "https://t.me/+aSbD7SmXaf8yNGIy"
 TELEGRAM_CHANNEL = "https://t.me/voiceinsideglxy"
 BACKEND_URL = "https://voiceinside-backend.onrender.com"
 
-# Чат с песнями и канал для проверки
 SONGS_CHAT_ID = -1003703009385
 CHANNEL_USERNAME = "@voiceinsideglxy"
 
@@ -25,6 +26,22 @@ bot.remove_webhook()
 
 pending_payments = {}
 
+# ==================== БАЗА ДАННЫХ ====================
+def init_warnings_db():
+    conn = sqlite3.connect("warnings.db")
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS warnings (
+            user_id INTEGER PRIMARY KEY,
+            message_id INTEGER,
+            warned_at TEXT
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+init_warnings_db()
+
 # ==================== ПРОВЕРКА ПОДПИСКИ НА КАНАЛ ====================
 @bot.message_handler(func=lambda message: message.chat.id == SONGS_CHAT_ID)
 def check_channel_subscription(message):
@@ -33,13 +50,77 @@ def check_channel_subscription(message):
 
     try:
         status = bot.get_chat_member(CHANNEL_USERNAME, user_id).status
-        if status not in ['member', 'administrator', 'creator']:
-            bot.reply_to(
-                message,
-                f"@{username}, вы не подписаны на {CHANNEL_USERNAME}."
-            )
+        if status in ['member', 'administrator', 'creator']:
+            return
     except:
-        pass
+        return
+
+    # Не подписан — предупреждаем
+    sent = bot.reply_to(
+        message,
+        f"@{username}, вы не подписаны на {CHANNEL_USERNAME}."
+    )
+
+    # Сохраняем в базу
+    conn = sqlite3.connect("warnings.db")
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT OR REPLACE INTO warnings (user_id, message_id, warned_at)
+        VALUES (?, ?, ?)
+    """, (user_id, sent.message_id, datetime.now().isoformat()))
+    conn.commit()
+    conn.close()
+
+# ==================== ПРОВЕРКА КТО ПОДПИСАЛСЯ ====================
+def check_who_subscribed():
+    conn = sqlite3.connect("warnings.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT user_id, message_id FROM warnings")
+    rows = cursor.fetchall()
+
+    for user_id, message_id in rows:
+        try:
+            status = bot.get_chat_member(CHANNEL_USERNAME, user_id).status
+            if status in ['member', 'administrator', 'creator']:
+                username = f"user_{user_id}"
+                try:
+                    user = bot.get_chat(user_id)
+                    if user.username:
+                        username = user.username
+                except:
+                    pass
+
+                # Удаляем из базы
+                cursor.execute("DELETE FROM warnings WHERE user_id = ?", (user_id,))
+
+                # Отправляем уведомление в чат реплаем на исходное сообщение
+                try:
+                    bot.send_message(
+                        SONGS_CHAT_ID,
+                        f"@{username} подписался на канал.",
+                        reply_to_message_id=message_id
+                    )
+                except:
+                    pass
+        except:
+            pass
+
+    conn.commit()
+    conn.close()
+
+# Запускаем проверку в отдельном потоке
+import threading
+import time
+
+def run_periodic_check():
+    while True:
+        time.sleep(60)
+        try:
+            check_who_subscribed()
+        except:
+            pass
+
+threading.Thread(target=run_periodic_check, daemon=True).start()
 
 # ==================== ГЛАВНОЕ МЕНЮ ====================
 @bot.message_handler(commands=['start'])
