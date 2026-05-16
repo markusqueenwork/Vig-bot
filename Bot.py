@@ -9,7 +9,7 @@ BOT_TOKEN = os.environ.get('BOT_TOKEN')
 CHANNEL_VIP = "-1003906026623"
 CHAT_VIP = "https://t.me/+aSbD7SmXaf8yNGIy"
 TELEGRAM_CHANNEL = "https://t.me/voiceinsideglxy"
-BACKEND_URL = "https://voiceinside-backend.onrender.com"
+BACKEND_URL = "https://backend-voiceinsidegalaxy.amvera.io"
 
 SONGS_CHAT_ID = -1003703009385
 CHANNEL_USERNAME = "@voiceinsideglxy"
@@ -58,7 +58,7 @@ def check_channel_subscription(message):
     # Не подписан — предупреждаем
     sent = bot.reply_to(
         message,
-        f"@{username}, вы не подписаны на {CHANNEL_USERNAME}."
+        f"@{username}, вы не подписаны на {CHANNEL_USERNAME}"
     )
 
     # Сохраняем в базу
@@ -97,7 +97,7 @@ def check_who_subscribed():
                 try:
                     bot.send_message(
                         SONGS_CHAT_ID,
-                        f"@{username} подписался на канал.",
+                        f"@{username} подписался на канал",
                         reply_to_message_id=message_id
                     )
                 except:
@@ -220,7 +220,7 @@ def check_vip(call):
 
             if data.get("active"):
                 bot.edit_message_text(
-                    f"Подписка активна.\n"
+                    f"Подписка активна\n"
                     f"Действует до: {data['expire_date']}\n"
                     f"Осталось дней: {data['days_left']}\n\n"
                     f"Доступ к чату: {CHAT_VIP}",
@@ -256,16 +256,16 @@ def check_vip(call):
                 pass
 
             bot.edit_message_text(
-                f"Оплата прошла.\n\n"
+                f"Оплата прошла\n\n"
                 f"Доступ к чату: {CHAT_VIP}\n\n"
-                f"Если ссылка не работает, обратитесь в поддержку.",
+                f"Если ссылка не работает, обратитесь в поддержку",
                 call.message.chat.id,
                 call.message.message_id
             )
         else:
             bot.edit_message_text(
-                "Оплата ещё не прошла.\n\n"
-                "Если вы оплатили — подождите минуту и нажмите кнопку снова.",
+                "Оплата ещё не прошла\n\n"
+                "Если вы оплатили — подождите минуту и нажмите кнопку снова",
                 call.message.chat.id,
                 call.message.message_id
             )
