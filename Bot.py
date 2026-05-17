@@ -55,13 +55,11 @@ def check_channel_subscription(message):
     except:
         return
 
-    # Не подписан — предупреждаем
     sent = bot.reply_to(
         message,
         f"@{username}, вы не подписаны на {CHANNEL_USERNAME}"
     )
 
-    # Сохраняем в базу
     conn = sqlite3.connect("warnings.db")
     cursor = conn.cursor()
     cursor.execute("""
@@ -90,10 +88,8 @@ def check_who_subscribed():
                 except:
                     pass
 
-                # Удаляем из базы
                 cursor.execute("DELETE FROM warnings WHERE user_id = ?", (user_id,))
 
-                # Отправляем уведомление в чат реплаем на исходное сообщение
                 try:
                     bot.send_message(
                         SONGS_CHAT_ID,
@@ -108,7 +104,6 @@ def check_who_subscribed():
     conn.commit()
     conn.close()
 
-# Запускаем проверку в отдельном потоке
 import threading
 import time
 
@@ -265,7 +260,7 @@ def check_vip(call):
         else:
             bot.edit_message_text(
                 "Оплата ещё не прошла\n\n"
-                "Если вы оплатили — подождите минуту и нажмите кнопку снова",
+                f"Если вы оплатили — подождите минуту и нажмите кнопку снова",
                 call.message.chat.id,
                 call.message.message_id
             )
