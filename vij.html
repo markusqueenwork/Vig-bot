@@ -10,7 +10,7 @@
 
   body {
     font-family: 'Inter', sans-serif;
-    background: #000;
+    background: transparent;
     color: #e8e8e8;
     -webkit-font-smoothing: antialiased;
     overflow-y: auto;
@@ -38,8 +38,11 @@
   }
 
   .card {
-    background: rgba(10,10,10,0.7); backdrop-filter: blur(20px);
-    border: 1px solid #1a1a1a; border-radius: 20px;
+    background: rgba(10,10,10,0.55);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 20px;
     padding: 24px 20px;
     transition: border-color 0.3s ease;
     animation: fadeInUp 0.6s ease forwards; opacity: 0;
@@ -51,6 +54,7 @@
   .card:nth-child(4) { animation-delay: 0.25s; }
   .card:nth-child(5) { animation-delay: 0.3s; }
   .card:nth-child(6) { animation-delay: 0.35s; }
+  .card:nth-child(7) { animation-delay: 0.4s; }
 
   @keyframes fadeInUp {
     from { opacity: 0; transform: translateY(20px); }
@@ -79,11 +83,12 @@
     transition: transform 0.2s ease;
   }
   .ring-wrapper:hover { transform: scale(1.05); }
-  .ring-wrapper svg { width: 90px; height: 90px; }
-  .ring-bg { fill: none; stroke: #1a1a1a; stroke-width: 8; }
+  .ring-wrapper svg { width: 90px; height: 90px; display: block; }
+  .ring-bg { fill: none; stroke: rgba(255,255,255,0.06); stroke-width: 8; }
   .ring-fill {
     fill: none; stroke-width: 8; stroke-linecap: round;
     transition: stroke-dashoffset 0.6s ease;
+    transform: rotate(-90deg); transform-origin: 50% 50%;
   }
   .ring-fill.paid { stroke: #FFCC00; }
   .ring-fill.free { stroke: #888; }
@@ -100,7 +105,7 @@
 
   .track-input {
     width: 100%; padding: 18px 24px;
-    background: #0a0a0a; border: 1px solid #333;
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);
     border-radius: 50px; color: #fff;
     font-family: 'Inter', sans-serif;
     font-size: 1.3rem; font-weight: 600;
@@ -118,8 +123,8 @@
 
   .vote-live {
     display: flex; align-items: center; justify-content: space-between;
-    background: #0a0a0a; padding: 16px 20px; border-radius: 50px;
-    border: 1px solid #333;
+    background: rgba(255,255,255,0.04); padding: 16px 20px; border-radius: 50px;
+    border: 1px solid rgba(255,255,255,0.1);
   }
   .vote-live .label { color: #888; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; }
   .vote-live .value { font-size: 1.5rem; font-weight: 800; color: #FFCC00; }
@@ -131,7 +136,7 @@
   .slider-row { display: flex; align-items: center; gap: 12px; }
   .slider-row input[type="range"] {
     flex: 1; -webkit-appearance: none; height: 6px;
-    background: #333; border-radius: 3px;
+    background: rgba(255,255,255,0.1); border-radius: 3px;
   }
   .slider-row input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none; width: 22px; height: 22px;
@@ -144,8 +149,8 @@
 
   .final-score {
     display: flex; align-items: baseline; justify-content: space-between;
-    background: #0a0a0a; padding: 16px 24px; border-radius: 50px;
-    border: 1px solid #333; margin-bottom: 8px;
+    background: rgba(255,255,255,0.04); padding: 16px 24px; border-radius: 50px;
+    border: 1px solid rgba(255,255,255,0.1); margin-bottom: 8px;
   }
   .final-score .label { font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #888; font-size: 0.85rem; }
   .final-score .score { font-size: 2rem; font-weight: 800; color: #FFCC00; line-height: 1; }
@@ -153,37 +158,40 @@
   .deposit-form { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
   .deposit-form input {
     flex: 1; min-width: 100px; padding: 12px 16px;
-    background: #0a0a0a; border: 1px solid #333; border-radius: 50px;
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 50px;
     color: #fff; font-family: 'Inter', sans-serif; font-size: 0.9rem; font-weight: 500;
     transition: all 0.2s ease;
   }
   .deposit-form input:focus { outline: none; border-color: #FFCC00; }
   .deposit-form input::placeholder { color: #555; }
 
-  .deposit-list { max-height: 160px; overflow-y: auto; }
+  .deposit-list { max-height: 120px; overflow-y: auto; }
   .deposit-list::-webkit-scrollbar { width: 4px; }
   .deposit-list::-webkit-scrollbar-thumb { background: #FFCC00; border-radius: 4px; }
   .deposit-row {
     display: flex; align-items: center; justify-content: space-between;
     padding: 10px 14px; margin-bottom: 4px;
-    background: #0a0a0a; border-radius: 12px; font-weight: 600; font-size: 0.9rem;
+    background: rgba(255,255,255,0.03); border-radius: 12px; font-weight: 600; font-size: 0.9rem;
   }
   .deposit-row .info { color: #ccc; }
   .deposit-row .tracks { color: #FFCC00; font-weight: 800; margin-right: 10px; }
 
   .top-section { display: flex; gap: 16px; flex-wrap: wrap; }
   .top-col { flex: 1; min-width: 250px; }
-  .top-list { max-height: 180px; overflow-y: auto; }
-  .top-list::-webkit-scrollbar { width: 4px; }
-  .top-list::-webkit-scrollbar-thumb { background: #FFCC00; border-radius: 4px; }
-  .top-item {
+  .top-list {
+    height: 120px; overflow: hidden;
+    position: relative;
+    background: rgba(255,255,255,0.02); border-radius: 12px;
+    padding: 6px;
+  }
+  .top-track {
     display: flex; justify-content: space-between; align-items: center;
     padding: 8px 12px; margin-bottom: 3px;
-    background: #0a0a0a; border-radius: 10px; font-weight: 600; font-size: 0.85rem;
+    background: rgba(255,255,255,0.03); border-radius: 10px; font-weight: 600; font-size: 0.85rem;
     border-left: 3px solid #FFCC00; color: #ccc;
   }
-  .top-item .pos { color: #FFCC00; margin-right: 8px; }
-  .top-item .score { color: #FFCC00; font-weight: 800; }
+  .top-track .pos { color: #FFCC00; margin-right: 8px; }
+  .top-track .score { color: #FFCC00; font-weight: 800; }
 
   .btn {
     border: none; padding: 14px 20px; border-radius: 50px;
@@ -198,7 +206,7 @@
   .btn-outline:hover { background: rgba(255,204,0,0.08); }
   .btn-small { padding: 6px 14px; font-size: 0.75rem; }
   .btn-icon {
-    width: 28px; height: 28px; border-radius: 50%; border: 1px solid #333;
+    width: 28px; height: 28px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.15);
     background: transparent; color: #FFCC00; cursor: pointer; font-size: 1rem;
     display: inline-flex; align-items: center; justify-content: center;
     transition: all 0.2s ease; flex-shrink: 0;
@@ -223,9 +231,8 @@
         <svg viewBox="0 0 100 100">
           <circle class="ring-bg" cx="50" cy="50" r="42"/>
           <circle class="ring-fill paid" id="ring-fill-paid" cx="50" cy="50" r="42"
-            stroke-dasharray="263.89" stroke-dashoffset="263.89"
-            transform="rotate(-90 50 50)"/>
-          <text class="ring-center" id="ring-text-paid">0</text>
+            stroke-dasharray="263.89" stroke-dashoffset="263.89"/>
+          <text class="ring-center" x="50" y="50">0</text>
         </svg>
         <span class="ring-label paid">Платные</span>
       </div>
@@ -233,13 +240,23 @@
         <svg viewBox="0 0 100 100">
           <circle class="ring-bg" cx="50" cy="50" r="42"/>
           <circle class="ring-fill free" id="ring-fill-free" cx="50" cy="50" r="42"
-            stroke-dasharray="263.89" stroke-dashoffset="263.89"
-            transform="rotate(-90 50 50)"/>
-          <text class="ring-center" id="ring-text-free">0</text>
+            stroke-dasharray="263.89" stroke-dashoffset="263.89"/>
+          <text class="ring-center" x="50" y="50">0</text>
         </svg>
         <span class="ring-label free">Бесплатные</span>
       </div>
     </div>
+  </div>
+
+  <!-- ДЕПОЗИТЫ -->
+  <div class="card">
+    <h2>Депозиты</h2>
+    <div class="deposit-form">
+      <input type="text" id="deposit-nick" placeholder="Ник">
+      <input type="number" id="deposit-amount" placeholder="Сумма (руб)" min="100" step="100">
+      <button class="btn btn-primary btn-small" id="add-deposit">+</button>
+    </div>
+    <div class="deposit-list" id="deposit-list"></div>
   </div>
 
   <!-- ТЕКУЩИЙ ТРЕК -->
@@ -249,16 +266,6 @@
     <div class="checkbox-wrapper">
       <input type="checkbox" id="has-lyrics">
       <label for="has-lyrics">Вокал / текст</label>
-    </div>
-  </div>
-
-  <!-- ГОЛОСОВАНИЕ ЧАТА -->
-  <div class="card">
-    <h2>Голосование чата</h2>
-    <div class="vote-live">
-      <span class="label">Чат</span>
-      <span class="value" id="chat-score">—</span>
-      <span class="count" id="chat-count">0 голосов</span>
     </div>
   </div>
 
@@ -272,15 +279,14 @@
     </div>
   </div>
 
-  <!-- ДЕПОЗИТЫ -->
+  <!-- ГОЛОСОВАНИЕ ЧАТА -->
   <div class="card">
-    <h2>Депозиты</h2>
-    <div class="deposit-form">
-      <input type="text" id="deposit-nick" placeholder="Ник">
-      <input type="number" id="deposit-amount" placeholder="Сумма (руб)" min="100" step="100">
-      <button class="btn btn-primary btn-small" id="add-deposit">+</button>
+    <h2>Голосование чата</h2>
+    <div class="vote-live">
+      <span class="label">Чат</span>
+      <span class="value" id="chat-score">—</span>
+      <span class="count" id="chat-count">0 голосов</span>
     </div>
-    <div class="deposit-list" id="deposit-list"></div>
   </div>
 
   <!-- ТОПЫ -->
@@ -329,11 +335,9 @@
   }
 
   function updateRings() {
-    const max = Math.max(queueData.paid + queueData.free, 1);
-    const paidOffset = CIRCUMFERENCE - (queueData.paid / max) * CIRCUMFERENCE;
-    const freeOffset = CIRCUMFERENCE - (queueData.free / max) * CIRCUMFERENCE;
-    document.getElementById('ring-fill-paid').style.strokeDashoffset = paidOffset;
-    document.getElementById('ring-fill-free').style.strokeDashoffset = freeOffset;
+    const total = queueData.paid + queueData.free || 1;
+    document.getElementById('ring-fill-paid').style.strokeDashoffset = CIRCUMFERENCE - (queueData.paid / total) * CIRCUMFERENCE;
+    document.getElementById('ring-fill-free').style.strokeDashoffset = CIRCUMFERENCE - (queueData.free / total) * CIRCUMFERENCE;
     document.getElementById('ring-text-paid').textContent = queueData.paid;
     document.getElementById('ring-text-free').textContent = queueData.free;
   }
@@ -464,35 +468,64 @@
 
   document.getElementById("add-deposit").addEventListener("click", addDeposit);
 
-  // --- ТОПЫ ---
+  // --- ТОПЫ С АВТОСКРОЛЛОМ ---
+  let topData = { topStreamer: [], topChat: [] };
+  let streamerOffset = 0, chatOffset = 0;
+  const VISIBLE_ITEMS = 3;
+  const ITEM_HEIGHT = 44;
+
   async function loadTops() {
     try {
       const r = await fetch('/tops');
-      if (r.ok) {
-        const data = await r.json();
-        renderTopList("top-streamer", data.topStreamer);
-        renderTopList("top-chat", data.topChat);
-      }
+      if (r.ok) topData = await r.json();
     } catch(e) {}
+    updateTopLists();
   }
 
-  function renderTopList(id, items) {
+  function updateTopLists() {
+    renderTopList("top-streamer", topData.topStreamer || [], streamerOffset);
+    renderTopList("top-chat", topData.topChat || [], chatOffset);
+  }
+
+  function renderTopList(id, items, offset) {
     const el = document.getElementById(id);
     if (!items || items.length === 0) {
-      el.innerHTML = '<div style="color:#555;text-align:center;padding:16px;">Пусто</div>';
+      el.innerHTML = '<div style="color:#555;text-align:center;padding:36px;">Пусто</div>';
       return;
     }
     items.sort((a,b) => b.score - a.score);
-    el.innerHTML = items.map((item, idx) => `
-      <div class="top-item">
-        <span><span class="pos">#${idx+1}</span> ${item.name}</span>
-        <span class="score">${item.score}</span>
-      </div>
-    `).join('');
+    const total = items.length;
+    const maxOffset = Math.max(0, total - VISIBLE_ITEMS);
+    const safeOffset = Math.min(offset, maxOffset);
+    const visible = items.slice(safeOffset, safeOffset + VISIBLE_ITEMS);
+
+    el.innerHTML = visible.map((item, idx) => {
+      const pos = safeOffset + idx + 1;
+      return `<div class="top-track"><span><span class="pos">#${pos}</span> ${item.name}</span><span class="score">${item.score}</span></div>`;
+    }).join('');
   }
+
+  function scrollTops() {
+    const sMax = Math.max(0, (topData.topStreamer || []).length - VISIBLE_ITEMS);
+    const cMax = Math.max(0, (topData.topChat || []).length - VISIBLE_ITEMS);
+
+    if (sMax > 0) {
+      streamerOffset++;
+      if (streamerOffset > sMax) streamerOffset = 0;
+    }
+    if (cMax > 0) {
+      chatOffset++;
+      if (chatOffset > cMax) chatOffset = 0;
+    }
+    updateTopLists();
+  }
+
+  setInterval(scrollTops, 3000);
 
   document.getElementById("clear-tops").addEventListener("click", async () => {
     try { await fetch('/clear', { method: 'POST' }); } catch(e) {}
+    streamerOffset = 0;
+    chatOffset = 0;
     loadTops();
   });
 
@@ -520,6 +553,8 @@
     document.getElementById("track-name").value = '';
     generateSliders(document.getElementById("has-lyrics").checked ? "vocal" : "instrumental");
     document.getElementById("save-rating").disabled = true;
+    streamerOffset = 0;
+    chatOffset = 0;
     loadTops();
   }
 
