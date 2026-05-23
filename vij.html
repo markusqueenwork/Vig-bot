@@ -433,11 +433,10 @@
 
   document.getElementById("track-name").addEventListener("input", checkReady);
 
-  // --- ДАЛЕЕ (сохранить + следующий) ---
+  // --- ДАЛЕЕ (только сохранение, очередь не трогаем) ---
   async function nextTrack() {
     const trackName = document.getElementById("track-name").value.trim();
 
-    // Сохраняем оценку стримера
     const sliders = document.querySelectorAll("#sliders-container input[type=range]");
     const vals = Array.from(sliders).map(s => parseFloat(s.value));
     const avg = (vals.reduce((a,b)=>a+b,0) / vals.length).toFixed(1);
@@ -448,13 +447,6 @@
       });
     } catch(e) {}
 
-    // Уменьшаем очередь
-    if (queueData.paid > 0) queueData.paid--;
-    else if (queueData.free > 0) queueData.free--;
-    updateRings();
-    saveQueue();
-
-    // Сбрасываем
     document.getElementById("track-name").value = '';
     generateSliders(document.getElementById("has-lyrics").checked ? "vocal" : "instrumental");
     document.getElementById("next-track").disabled = true;
