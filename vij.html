@@ -10,7 +10,7 @@
 
   body {
     font-family: 'Inter', sans-serif;
-    background: #000;
+    background: #202020;
     color: #e8e8e8;
     -webkit-font-smoothing: antialiased;
     overflow-y: auto;
@@ -38,16 +38,14 @@
   }
 
   .card {
-    background: rgba(10,10,10,0.7);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid #1a1a1a;
+    background: #111;
+    border: 1px solid #2a2a2a;
     border-radius: 20px;
     padding: 24px 20px;
     transition: border-color 0.3s ease;
     animation: fadeInUp 0.6s ease forwards; opacity: 0;
   }
-  .card:hover { border-color: rgba(255,204,0,0.3); }
+  .card:hover { border-color: rgba(255,204,0,0.4); }
   .card:nth-child(1) { animation-delay: 0.1s; }
   .card:nth-child(2) { animation-delay: 0.15s; }
   .card:nth-child(3) { animation-delay: 0.2s; }
@@ -105,13 +103,13 @@
 
   .track-input {
     width: 100%; padding: 18px 24px;
-    background: #0a0a0a; border: 1px solid #333;
+    background: #1a1a1a; border: 1px solid #333;
     border-radius: 50px; color: #fff;
     font-family: 'Inter', sans-serif;
     font-size: 1.3rem; font-weight: 600;
     transition: all 0.2s ease;
   }
-  .track-input:focus { outline: none; border-color: #FFCC00; box-shadow: 0 0 0 3px rgba(255,204,0,0.1); }
+  .track-input:focus { outline: none; border-color: #FFCC00; box-shadow: 0 0 0 3px rgba(255,204,0,0.15); }
   .track-input::placeholder { color: #555; font-weight: 400; }
 
   .checkbox-wrapper {
@@ -123,7 +121,7 @@
 
   .vote-live {
     display: flex; align-items: center; justify-content: space-between;
-    background: #0a0a0a; padding: 16px 20px; border-radius: 50px;
+    background: #1a1a1a; padding: 16px 20px; border-radius: 50px;
     border: 1px solid #333;
   }
   .vote-live .label { color: #888; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -149,7 +147,7 @@
 
   .final-score {
     display: flex; align-items: baseline; justify-content: space-between;
-    background: #0a0a0a; padding: 16px 24px; border-radius: 50px;
+    background: #1a1a1a; padding: 16px 24px; border-radius: 50px;
     border: 1px solid #333; margin-bottom: 8px;
   }
   .final-score .label { font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #888; font-size: 0.85rem; }
@@ -158,7 +156,7 @@
   .deposit-form { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
   .deposit-form input {
     flex: 1; min-width: 100px; padding: 12px 16px;
-    background: #0a0a0a; border: 1px solid #333; border-radius: 50px;
+    background: #1a1a1a; border: 1px solid #333; border-radius: 50px;
     color: #fff; font-family: 'Inter', sans-serif; font-size: 0.9rem; font-weight: 500;
     transition: all 0.2s ease;
   }
@@ -171,7 +169,7 @@
   .deposit-row {
     display: flex; align-items: center; justify-content: space-between;
     padding: 10px 14px; margin-bottom: 4px;
-    background: #0a0a0a; border-radius: 12px; font-weight: 600; font-size: 0.9rem;
+    background: #1a1a1a; border-radius: 12px; font-weight: 600; font-size: 0.9rem;
   }
   .deposit-row .info { color: #ccc; }
   .deposit-row .tracks { color: #FFCC00; font-weight: 800; margin-right: 10px; }
@@ -181,13 +179,13 @@
   .top-list {
     height: 120px; overflow: hidden;
     position: relative;
-    background: #0a0a0a; border-radius: 12px;
+    background: #0d0d0d; border-radius: 12px;
     padding: 6px;
   }
   .top-track {
     display: flex; justify-content: space-between; align-items: center;
     padding: 8px 12px; margin-bottom: 3px;
-    background: #111; border-radius: 10px; font-weight: 600; font-size: 0.85rem;
+    background: #181818; border-radius: 10px; font-weight: 600; font-size: 0.85rem;
     border-left: 3px solid #FFCC00; color: #ccc;
   }
   .top-track .pos { color: #FFCC00; margin-right: 8px; }
@@ -340,8 +338,8 @@
 
     const paidText = document.getElementById('ring-text-paid');
     const freeText = document.getElementById('ring-text-free');
-    if (paidText) paidText.textContent = queueData.paid;
-    if (freeText) freeText.textContent = queueData.free;
+    if (paidText) paidText.innerHTML = queueData.paid;
+    if (freeText) freeText.innerHTML = queueData.free;
   }
 
   async function loadQueue() {
@@ -536,11 +534,10 @@
     loadTops();
   });
 
-  // --- ПРОВЕРКА УСЛОВИЙ ---
+  // --- ПРОВЕРКА УСЛОВИЙ (только название трека) ---
   function checkSaveReady() {
     const trackName = document.getElementById("track-name").value.trim();
-    const chatVotes = parseInt(document.getElementById("chat-count").textContent) || 0;
-    document.getElementById("save-rating").disabled = !(trackName && chatVotes > 0);
+    document.getElementById("save-rating").disabled = !trackName;
   }
 
   document.getElementById("track-name").addEventListener("input", checkSaveReady);
