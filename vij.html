@@ -282,9 +282,15 @@
     particlesBg.appendChild(p);
   }
 
-  // --- ДИАГРАММА ОЧЕРЕДИ ---
+  // --- ДИАГРАММА ОЧЕРЕДИ (ТОЛЬКО ЛОКАЛЬНО) ---
   const CIRCUMFERENCE = 2 * Math.PI * 42;
   let queueData = { paid: 0, free: 0 };
+
+  // Загружаем из localStorage при старте
+  try {
+    const saved = localStorage.getItem('vigQueueData');
+    if (saved) queueData = JSON.parse(saved);
+  } catch(e) {}
 
   function updateRings() {
     const total = queueData.paid + queueData.free || 1;
@@ -300,25 +306,17 @@
     const freeText = document.getElementById('ring-text-free');
     if (paidText) paidText.innerHTML = queueData.paid;
     if (freeText) freeText.innerHTML = queueData.free;
+
+    // Сохраняем в localStorage
+    localStorage.setItem('vigQueueData', JSON.stringify(queueData));
   }
 
-  async function loadQueue() {
-    try { const r = await fetch('/queue'); if (r.ok) queueData = await r.json(); }
-    catch(e) {}
-    updateRings();
-  }
-
-  async function saveQueue() {
-    try { await fetch('/queue', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(queueData) }); }
-    catch(e) {}
-  }
-
+  // Клик по кольцу — ручной ввод
   document.getElementById('ring-paid').addEventListener('click', () => {
     const val = prompt('Платные треки:', queueData.paid);
     if (val !== null && !isNaN(val) && parseInt(val) >= 0) {
       queueData.paid = parseInt(val);
       updateRings();
-      saveQueue();
     }
   });
   document.getElementById('ring-free').addEventListener('click', () => {
@@ -326,9 +324,10 @@
     if (val !== null && !isNaN(val) && parseInt(val) >= 0) {
       queueData.free = parseInt(val);
       updateRings();
-      saveQueue();
     }
   });
+
+  updateRings();
 
   // --- КРИТЕРИИ ---
   const criteria = {
@@ -371,14 +370,13 @@
   });
   generateSliders("instrumental");
 
-  // --- ДЕПОЗИТЫ ---
+  // --- ДЕПОЗИТЫ (ТОЛЬКО ЛОКАЛЬНО) ---
   let deposits = {};
 
-  async function loadDeposits() {
-    try { const r = await fetch('/deposits'); if (r.ok) deposits = await r.json(); }
-    catch(e) {}
-    renderDeposits();
-  }
+  try {
+    const saved = localStorage.getItem('vigDeposits');
+    if (saved) deposits = JSON.parse(saved);
+  } catch(e) {}
 
   function renderDeposits() {
     const list = document.getElementById("deposit-list");
@@ -396,34 +394,28 @@
     `).join('');
   }
 
-  async function addDeposit() {
+  function addDeposit() {
     const nick = document.getElementById("deposit-nick").value.trim();
     const amount = parseInt(document.getElementById("deposit-amount").value);
     if (!nick || isNaN(amount) || amount < 100) return;
-    try {
-      await fetch('/deposits', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nick, amount })
-      });
-    } catch(e) {}
     deposits[nick] = (deposits[nick] || 0) + amount;
+    localStorage.setItem('vigDeposits', JSON.stringify(deposits));
     renderDeposits();
     document.getElementById("deposit-nick").value = '';
     document.getElementById("deposit-amount").value = '';
   }
 
-  async function spendDeposit(nick) {
-    try {
-      await fetch(`/deposits/${encodeURIComponent(nick)}/spend`, { method: 'POST' });
-    } catch(e) {}
+  function spendDeposit(nick) {
     if (deposits[nick]) {
       deposits[nick] -= 100;
       if (deposits[nick] < 100) delete deposits[nick];
+      localStorage.setItem('vigDeposits', JSON.stringify(deposits));
     }
     renderDeposits();
   }
 
   document.getElementById("add-deposit").addEventListener("click", addDeposit);
+  renderDeposits();
 
   // --- ПРОВЕРКА УСЛОВИЙ ---
   function checkReady() {
@@ -433,44 +425,30 @@
 
   document.getElementById("track-name").addEventListener("input", checkReady);
 
-  // --- ДАЛЕЕ (только сохранение, очередь не трогаем) ---
-  async function nextTrack() {
+  // --- ДАЛЕЕ (очередь НЕ трогаем) ---
+  function nextTrack() {
     const trackName = document.getElementById("track-name").value.trim();
-
     const sliders = document.querySelectorAll("#sliders-container input[type=range]");
     const vals = Array.from(sliders).map(s => parseFloat(s.value));
     const avg = (vals.reduce((a,b)=>a+b,0) / vals.length).toFixed(1);
-    try {
-      await fetch('/rate/save', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ trackName, streamerScore: avg })
-      });
-    } catch(e) {}
 
+    // Сохраняем оценку в localStorage (без сервера)
+    const history = JSON.parse(localStorage.getItem('vigHistory') || '[]');
+    history.push({ trackName, streamerScore: avg, time: new Date().toISOString() });
+    localStorage.setItem('vigHistory', JSON.stringify(history));
+
+    // Сбрасываем
     document.getElementById("track-name").value = '';
     generateSliders(document.getElementById("has-lyrics").checked ? "vocal" : "instrumental");
     document.getElementById("next-track").disabled = true;
+
+    // Очередь НЕ меняется
+    alert('Сохранено! Очередь: платных ' + queueData.paid + ', бесплатных ' + queueData.free);
   }
 
   document.getElementById("next-track").addEventListener("click", nextTrack);
 
-  // --- POLLING ЧАТА ---
-  async function pollChat() {
-    try {
-      const r = await fetch('/chat-status');
-      if (r.ok) {
-        const data = await r.json();
-        document.getElementById("chat-score").textContent = data.avg ? data.avg.toFixed(1) : '—';
-        document.getElementById("chat-count").textContent = `${data.count} голосов`;
-      }
-    } catch(e) {}
-  }
-  setInterval(pollChat, 1000);
-  pollChat();
-
   // --- ИНИЦИАЛИЗАЦИЯ ---
-  loadQueue();
-  loadDeposits();
   checkReady();
 </script>
 </body>
