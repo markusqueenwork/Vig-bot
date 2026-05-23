@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Оценка треков — VIG</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #000;
+    color: #e8e8e8;
+    -webkit-font-smoothing: antialiased;
+    overflow-y: auto;
+  }
+
+  .particles-bg {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    z-index: 0; pointer-events: none; overflow: hidden;
+  }
+  .particle {
+    position: absolute; background: #FFCC00; border-radius: 50%;
+    opacity: 0; animation: floatUp linear infinite;
+  }
+  @keyframes floatUp {
+    0% { transform: translateY(100vh) scale(0); opacity: 0; }
+    10% { opacity: 0.7; }
+    90% { opacity: 0.2; }
+    100% { transform: translateY(-10vh) scale(1); opacity: 0; }
+  }
+
+  .container {
+    position: relative; z-index: 1;
+    max-width: 620px; margin: 0 auto;
+    padding: 20px; display: flex; flex-direction: column; gap: 18px;
+  }
+
+  .card {
+    background: rgba(10,10,10,0.7); backdrop-filter: blur(20px);
+    border: 1px solid #1a1a1a; border-radius: 20px;
+    padding: 24px 20px;
+    transition: border-color 0.3s ease;
+    animation: fadeInUp 0.6s ease forwards; opacity: 0;
+  }
+  .card:hover { border-color: rgba(255,204,0,0.3); }
+  .card:nth-child(1) { animation-delay: 0.1s; }
+  .card:nth-child(2) { animation-delay: 0.15s; }
+  .card:nth-child(3) { animation-delay: 0.2s; }
+  .card:nth-child(4) { animation-delay: 0.25s; }
+  .card:nth-child(5) { animation-delay: 0.3s; }
+  .card:nth-child(6) { animation-delay: 0.35s; }
+
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  h2 {
+    font-size: 1.1rem; font-weight: 700; letter-spacing: 0.5px;
+    margin-bottom: 16px; color: #fff;
+    display: flex; align-items: center; gap: 10px;
+    text-transform: uppercase;
+  }
+  h2::before {
+    content: ''; display: inline-block;
+    width: 4px; height: 16px; background: #FFCC00; border-radius: 2px;
+  }
+
+  /* Диаграмма очереди */
+  .queue-rings {
+    display: flex; justify-content: center; gap: 40px;
+    padding: 10px 0;
+  }
+  .ring-wrapper {
+    display: flex; flex-direction: column; align-items: center;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+  }
+  .ring-wrapper:hover { transform: scale(1.05); }
+  .ring-wrapper svg { width: 90px; height: 90px; }
+  .ring-bg { fill: none; stroke: #1a1a1a; stroke-width: 8; }
+  .ring-fill {
+    fill: none; stroke-width: 8; stroke-linecap: round;
+    transition: stroke-dashoffset 0.6s ease;
+  }
+  .ring-fill.paid { stroke: #FFCC00; }
+  .ring-fill.free { stroke: #888; }
+  .ring-center {
+    font-size: 1.8rem; font-weight: 800; fill: #fff;
+    text-anchor: middle; dominant-baseline: central;
+  }
+  .ring-label {
+    margin-top: 8px; font-weight: 600; font-size: 0.8rem;
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .ring-label.paid { color: #FFCC00; }
+  .ring-label.free { color: #888; }
+
+  .track-input {
+    width: 100%; padding: 18px 24px;
+    background: #0a0a0a; border: 1px solid #333;
+    border-radius: 50px; color: #fff;
+    font-family: 'Inter', sans-serif;
+    font-size: 1.3rem; font-weight: 600;
+    transition: all 0.2s ease;
+  }
+  .track-input:focus { outline: none; border-color: #FFCC00; box-shadow: 0 0 0 3px rgba(255,204,0,0.1); }
+  .track-input::placeholder { color: #555; font-weight: 400; }
+
+  .checkbox-wrapper {
+    display: flex; align-items: center; gap: 10px;
+    margin: 12px 0 4px; cursor: pointer;
+  }
+  .checkbox-wrapper input[type="checkbox"] { width: 18px; height: 18px; accent-color: #FFCC00; cursor: pointer; }
+  .checkbox-wrapper label { font-weight: 500; color: #888; cursor: pointer; font-size: 0.85rem; }
+
+  .vote-live {
+    display: flex; align-items: center; justify-content: space-between;
+    background: #0a0a0a; padding: 16px 20px; border-radius: 50px;
+    border: 1px solid #333;
+  }
+  .vote-live .label { color: #888; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; }
+  .vote-live .value { font-size: 1.5rem; font-weight: 800; color: #FFCC00; }
+  .vote-live .count { color: #888; font-size: 0.85rem; }
+
+  .sliders-grid { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
+  .slider-item { flex: 1 1 calc(50% - 6px); min-width: 180px; }
+  .slider-item label { display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; color: #888; margin-bottom: 6px; }
+  .slider-row { display: flex; align-items: center; gap: 12px; }
+  .slider-row input[type="range"] {
+    flex: 1; -webkit-appearance: none; height: 6px;
+    background: #333; border-radius: 3px;
+  }
+  .slider-row input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 22px; height: 22px;
+    background: #FFCC00; border-radius: 50%; cursor: pointer;
+    border: 2px solid #000; box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    transition: transform 0.1s;
+  }
+  .slider-row input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); background: #e6b800; }
+  .slider-value { min-width: 36px; text-align: right; font-weight: 700; color: #FFCC00; font-size: 1.1rem; }
+
+  .final-score {
+    display: flex; align-items: baseline; justify-content: space-between;
+    background: #0a0a0a; padding: 16px 24px; border-radius: 50px;
+    border: 1px solid #333; margin-bottom: 8px;
+  }
+  .final-score .label { font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #888; font-size: 0.85rem; }
+  .final-score .score { font-size: 2rem; font-weight: 800; color: #FFCC00; line-height: 1; }
+
+  .deposit-form { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+  .deposit-form input {
+    flex: 1; min-width: 100px; padding: 12px 16px;
+    background: #0a0a0a; border: 1px solid #333; border-radius: 50px;
+    color: #fff; font-family: 'Inter', sans-serif; font-size: 0.9rem; font-weight: 500;
+    transition: all 0.2s ease;
+  }
+  .deposit-form input:focus { outline: none; border-color: #FFCC00; }
+  .deposit-form input::placeholder { color: #555; }
+
+  .deposit-list { max-height: 160px; overflow-y: auto; }
+  .deposit-list::-webkit-scrollbar { width: 4px; }
+  .deposit-list::-webkit-scrollbar-thumb { background: #FFCC00; border-radius: 4px; }
+  .deposit-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 14px; margin-bottom: 4px;
+    background: #0a0a0a; border-radius: 12px; font-weight: 600; font-size: 0.9rem;
+  }
+  .deposit-row .info { color: #ccc; }
+  .deposit-row .tracks { color: #FFCC00; font-weight: 800; margin-right: 10px; }
+
+  .top-section { display: flex; gap: 16px; flex-wrap: wrap; }
+  .top-col { flex: 1; min-width: 250px; }
+  .top-list { max-height: 180px; overflow-y: auto; }
+  .top-list::-webkit-scrollbar { width: 4px; }
+  .top-list::-webkit-scrollbar-thumb { background: #FFCC00; border-radius: 4px; }
+  .top-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 12px; margin-bottom: 3px;
+    background: #0a0a0a; border-radius: 10px; font-weight: 600; font-size: 0.85rem;
+    border-left: 3px solid #FFCC00; color: #ccc;
+  }
+  .top-item .pos { color: #FFCC00; margin-right: 8px; }
+  .top-item .score { color: #FFCC00; font-weight: 800; }
+
+  .btn {
+    border: none; padding: 14px 20px; border-radius: 50px;
+    font-weight: 700; font-size: 0.9rem; text-transform: uppercase;
+    letter-spacing: 0.5px; cursor: pointer; transition: all 0.2s ease;
+    font-family: 'Inter', sans-serif;
+  }
+  .btn-primary { background: #FFCC00; color: #000; }
+  .btn-primary:hover:not(:disabled) { background: #e6b800; transform: translateY(-2px); box-shadow: 0 6px 14px rgba(255,204,0,0.2); }
+  .btn-primary:disabled { background: #333; color: #666; cursor: not-allowed; }
+  .btn-outline { background: transparent; border: 1.5px solid #FFCC00; color: #FFCC00; }
+  .btn-outline:hover { background: rgba(255,204,0,0.08); }
+  .btn-small { padding: 6px 14px; font-size: 0.75rem; }
+  .btn-icon {
+    width: 28px; height: 28px; border-radius: 50%; border: 1px solid #333;
+    background: transparent; color: #FFCC00; cursor: pointer; font-size: 1rem;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: all 0.2s ease; flex-shrink: 0;
+  }
+  .btn-icon:hover { border-color: #FFCC00; background: rgba(255,204,0,0.1); }
+
+  .btn-row { display: flex; gap: 10px; }
+  .btn-row .btn { flex: 1; }
+</style>
+</head>
+<body>
+
+<div class="particles-bg" id="particles"></div>
+
+<div class="container">
+
+  <!-- ОЧЕРЕДЬ -->
+  <div class="card">
+    <h2>Очередь</h2>
+    <div class="queue-rings">
+      <div class="ring-wrapper" id="ring-paid" title="Нажми для редактирования">
+        <svg viewBox="0 0 100 100">
+          <circle class="ring-bg" cx="50" cy="50" r="42"/>
+          <circle class="ring-fill paid" id="ring-fill-paid" cx="50" cy="50" r="42"
+            stroke-dasharray="263.89" stroke-dashoffset="263.89"
+            transform="rotate(-90 50 50)"/>
+          <text class="ring-center" id="ring-text-paid">0</text>
+        </svg>
+        <span class="ring-label paid">Платные</span>
+      </div>
+      <div class="ring-wrapper" id="ring-free" title="Нажми для редактирования">
+        <svg viewBox="0 0 100 100">
+          <circle class="ring-bg" cx="50" cy="50" r="42"/>
+          <circle class="ring-fill free" id="ring-fill-free" cx="50" cy="50" r="42"
+            stroke-dasharray="263.89" stroke-dashoffset="263.89"
+            transform="rotate(-90 50 50)"/>
+          <text class="ring-center" id="ring-text-free">0</text>
+        </svg>
+        <span class="ring-label free">Бесплатные</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ТЕКУЩИЙ ТРЕК -->
+  <div class="card">
+    <h2>Текущий трек</h2>
+    <input type="text" id="track-name" class="track-input" placeholder="Название трека...">
+    <div class="checkbox-wrapper">
+      <input type="checkbox" id="has-lyrics">
+      <label for="has-lyrics">Вокал / текст</label>
+    </div>
+  </div>
+
+  <!-- ГОЛОСОВАНИЕ ЧАТА -->
+  <div class="card">
+    <h2>Голосование чата</h2>
+    <div class="vote-live">
+      <span class="label">Чат</span>
+      <span class="value" id="chat-score">—</span>
+      <span class="count" id="chat-count">0 голосов</span>
+    </div>
+  </div>
+
+  <!-- ОЦЕНКА СТРИМЕРА -->
+  <div class="card">
+    <h2>Оценка стримера</h2>
+    <div id="sliders-container" class="sliders-grid"></div>
+    <div class="final-score">
+      <span class="label">Итог</span>
+      <span class="score" id="final-score">5.0</span>
+    </div>
+  </div>
+
+  <!-- ДЕПОЗИТЫ -->
+  <div class="card">
+    <h2>Депозиты</h2>
+    <div class="deposit-form">
+      <input type="text" id="deposit-nick" placeholder="Ник">
+      <input type="number" id="deposit-amount" placeholder="Сумма (руб)" min="100" step="100">
+      <button class="btn btn-primary btn-small" id="add-deposit">+</button>
+    </div>
+    <div class="deposit-list" id="deposit-list"></div>
+  </div>
+
+  <!-- ТОПЫ -->
+  <div class="card">
+    <h2>Топы</h2>
+    <div class="top-section">
+      <div class="top-col">
+        <h2 style="font-size:0.9rem; margin-bottom:10px;">Стример</h2>
+        <div class="top-list" id="top-streamer"></div>
+      </div>
+      <div class="top-col">
+        <h2 style="font-size:0.9rem; margin-bottom:10px;">Чат</h2>
+        <div class="top-list" id="top-chat"></div>
+      </div>
+    </div>
+    <button class="btn btn-outline btn-small" id="clear-tops" style="margin-top:12px;">Очистить топы</button>
+  </div>
+
+  <!-- КНОПКИ -->
+  <div class="btn-row">
+    <button class="btn btn-primary" id="save-rating" disabled>Сохранить оценку</button>
+    <button class="btn btn-outline" id="next-track">Далее</button>
+  </div>
+
+</div>
+
+<script>
+  // --- ЧАСТИЦЫ ---
+  const particlesBg = document.getElementById('particles');
+  for (let i = 0; i < 30; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const size = Math.random() * 4 + 1;
+    p.style.cssText = `left:${Math.random()*100}%;width:${size}px;height:${size}px;animation-duration:${Math.random()*15+10}s;animation-delay:${Math.random()*10}s;`;
+    particlesBg.appendChild(p);
+  }
+
+  // --- ДИАГРАММА ОЧЕРЕДИ ---
+  const CIRCUMFERENCE = 2 * Math.PI * 42;
+  let queueData = { paid: 0, free: 0 };
+
+  async function loadQueue() {
+    try { const r = await fetch('/queue'); if (r.ok) queueData = await r.json(); }
+    catch(e) {}
+    updateRings();
+  }
+
+  function updateRings() {
+    const max = Math.max(queueData.paid + queueData.free, 1);
+    const paidOffset = CIRCUMFERENCE - (queueData.paid / max) * CIRCUMFERENCE;
+    const freeOffset = CIRCUMFERENCE - (queueData.free / max) * CIRCUMFERENCE;
+    document.getElementById('ring-fill-paid').style.strokeDashoffset = paidOffset;
+    document.getElementById('ring-fill-free').style.strokeDashoffset = freeOffset;
+    document.getElementById('ring-text-paid').textContent = queueData.paid;
+    document.getElementById('ring-text-free').textContent = queueData.free;
+  }
+
+  document.getElementById('ring-paid').addEventListener('click', () => {
+    const val = prompt('Платные треки:', queueData.paid);
+    if (val !== null && !isNaN(val) && parseInt(val) >= 0) {
+      queueData.paid = parseInt(val);
+      updateRings();
+      saveQueue();
+    }
+  });
+  document.getElementById('ring-free').addEventListener('click', () => {
+    const val = prompt('Бесплатные треки:', queueData.free);
+    if (val !== null && !isNaN(val) && parseInt(val) >= 0) {
+      queueData.free = parseInt(val);
+      updateRings();
+      saveQueue();
+    }
+  });
+
+  async function saveQueue() {
+    try { await fetch('/queue', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(queueData) }); }
+    catch(e) {}
+  }
+
+  document.getElementById('next-track').addEventListener('click', () => {
+    if (queueData.paid > 0) queueData.paid--;
+    else if (queueData.free > 0) queueData.free--;
+    updateRings();
+    saveQueue();
+    document.getElementById('track-name').value = '';
+    document.getElementById('save-rating').disabled = true;
+  });
+
+  // --- КРИТЕРИИ ---
+  const criteria = {
+    instrumental: ["Мелодия", "Продакшн", "Динамика", "Впечатление"],
+    vocal: ["Вокал", "Лирика", "Продакшн", "Впечатление"]
+  };
+
+  // --- СЛАЙДЕРЫ ---
+  function generateSliders(type) {
+    const container = document.getElementById("sliders-container");
+    container.innerHTML = "";
+    criteria[type].forEach(c => {
+      const div = document.createElement("div");
+      div.className = "slider-item";
+      div.innerHTML = `<label>${c}</label><div class="slider-row"><input type="range" min="0" max="10" value="5" step="0.5"><span class="slider-value">5.0</span></div>`;
+      container.appendChild(div);
+    });
+    attachSliderEvents();
+    updateFinalScore();
+  }
+
+  function attachSliderEvents() {
+    document.querySelectorAll("#sliders-container input[type=range]").forEach(s => {
+      const val = s.parentElement.querySelector(".slider-value");
+      const update = () => { val.textContent = parseFloat(s.value).toFixed(1); updateFinalScore(); };
+      s.addEventListener("input", update);
+      update();
+    });
+  }
+
+  function updateFinalScore() {
+    const sliders = document.querySelectorAll("#sliders-container input[type=range]");
+    const vals = Array.from(sliders).map(s => parseFloat(s.value));
+    const avg = (vals.reduce((a,b)=>a+b,0) / vals.length).toFixed(1);
+    document.getElementById("final-score").textContent = avg;
+  }
+
+  document.getElementById("has-lyrics").addEventListener("change", e => {
+    generateSliders(e.target.checked ? "vocal" : "instrumental");
+  });
+  generateSliders("instrumental");
+
+  // --- ДЕПОЗИТЫ ---
+  let deposits = {};
+
+  async function loadDeposits() {
+    try { const r = await fetch('/deposits'); if (r.ok) deposits = await r.json(); }
+    catch(e) {}
+    renderDeposits();
+  }
+
+  function renderDeposits() {
+    const list = document.getElementById("deposit-list");
+    const entries = Object.entries(deposits);
+    if (entries.length === 0) {
+      list.innerHTML = '<div style="color:#555;text-align:center;padding:16px;">Нет активных депозитов</div>';
+      return;
+    }
+    list.innerHTML = entries.map(([nick, amount]) => `
+      <div class="deposit-row">
+        <span class="info">${nick}</span>
+        <span class="tracks">${Math.floor(amount / 100)} треков (${amount} руб)</span>
+        <button class="btn-icon" onclick="spendDeposit('${nick}')">-</button>
+      </div>
+    `).join('');
+  }
+
+  async function addDeposit() {
+    const nick = document.getElementById("deposit-nick").value.trim();
+    const amount = parseInt(document.getElementById("deposit-amount").value);
+    if (!nick || isNaN(amount) || amount < 100) return;
+    try {
+      await fetch('/deposits', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nick, amount })
+      });
+    } catch(e) {}
+    deposits[nick] = (deposits[nick] || 0) + amount;
+    renderDeposits();
+    document.getElementById("deposit-nick").value = '';
+    document.getElementById("deposit-amount").value = '';
+  }
+
+  async function spendDeposit(nick) {
+    try {
+      await fetch(`/deposits/${encodeURIComponent(nick)}/spend`, { method: 'POST' });
+    } catch(e) {}
+    if (deposits[nick]) {
+      deposits[nick] -= 100;
+      if (deposits[nick] < 100) delete deposits[nick];
+    }
+    renderDeposits();
+  }
+
+  document.getElementById("add-deposit").addEventListener("click", addDeposit);
+
+  // --- ТОПЫ ---
+  async function loadTops() {
+    try {
+      const r = await fetch('/tops');
+      if (r.ok) {
+        const data = await r.json();
+        renderTopList("top-streamer", data.topStreamer);
+        renderTopList("top-chat", data.topChat);
+      }
+    } catch(e) {}
+  }
+
+  function renderTopList(id, items) {
+    const el = document.getElementById(id);
+    if (!items || items.length === 0) {
+      el.innerHTML = '<div style="color:#555;text-align:center;padding:16px;">Пусто</div>';
+      return;
+    }
+    items.sort((a,b) => b.score - a.score);
+    el.innerHTML = items.map((item, idx) => `
+      <div class="top-item">
+        <span><span class="pos">#${idx+1}</span> ${item.name}</span>
+        <span class="score">${item.score}</span>
+      </div>
+    `).join('');
+  }
+
+  document.getElementById("clear-tops").addEventListener("click", async () => {
+    try { await fetch('/clear', { method: 'POST' }); } catch(e) {}
+    loadTops();
+  });
+
+  // --- ПРОВЕРКА УСЛОВИЙ ---
+  function checkSaveReady() {
+    const trackName = document.getElementById("track-name").value.trim();
+    const chatVotes = parseInt(document.getElementById("chat-count").textContent) || 0;
+    document.getElementById("save-rating").disabled = !(trackName && chatVotes > 0);
+  }
+
+  document.getElementById("track-name").addEventListener("input", checkSaveReady);
+
+  // --- СОХРАНЕНИЕ ОЦЕНКИ ---
+  async function saveRating() {
+    const trackName = document.getElementById("track-name").value.trim();
+    const sliders = document.querySelectorAll("#sliders-container input[type=range]");
+    const vals = Array.from(sliders).map(s => parseFloat(s.value));
+    const avg = (vals.reduce((a,b)=>a+b,0) / vals.length).toFixed(1);
+    try {
+      await fetch('/rate/save', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ trackName, streamerScore: avg })
+      });
+    } catch(e) {}
+    document.getElementById("track-name").value = '';
+    generateSliders(document.getElementById("has-lyrics").checked ? "vocal" : "instrumental");
+    document.getElementById("save-rating").disabled = true;
+    loadTops();
+  }
+
+  document.getElementById("save-rating").addEventListener("click", saveRating);
+
+  // --- POLLING ЧАТА ---
+  async function pollChat() {
+    try {
+      const r = await fetch('/chat-status');
+      if (r.ok) {
+        const data = await r.json();
+        document.getElementById("chat-score").textContent = data.avg ? data.avg.toFixed(1) : '—';
+        document.getElementById("chat-count").textContent = `${data.count} голосов`;
+        checkSaveReady();
+      }
+    } catch(e) {}
+  }
+  setInterval(pollChat, 1000);
+  pollChat();
+
+  // --- ИНИЦИАЛИЗАЦИЯ ---
+  loadQueue();
+  loadDeposits();
+  loadTops();
+  checkSaveReady();
+</script>
+</body>
+</html>
