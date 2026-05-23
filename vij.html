@@ -10,7 +10,7 @@
 
   body {
     font-family: 'Inter', sans-serif;
-    background: #202020;
+    background: #000;
     color: #e8e8e8;
     -webkit-font-smoothing: antialiased;
     overflow-y: auto;
@@ -52,7 +52,6 @@
   .card:nth-child(4) { animation-delay: 0.25s; }
   .card:nth-child(5) { animation-delay: 0.3s; }
   .card:nth-child(6) { animation-delay: 0.35s; }
-  .card:nth-child(7) { animation-delay: 0.4s; }
 
   @keyframes fadeInUp {
     from { opacity: 0; transform: translateY(20px); }
@@ -174,23 +173,6 @@
   .deposit-row .info { color: #ccc; }
   .deposit-row .tracks { color: #FFCC00; font-weight: 800; margin-right: 10px; }
 
-  .top-section { display: flex; gap: 16px; flex-wrap: wrap; }
-  .top-col { flex: 1; min-width: 250px; }
-  .top-list {
-    height: 120px; overflow: hidden;
-    position: relative;
-    background: #0d0d0d; border-radius: 12px;
-    padding: 6px;
-  }
-  .top-track {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 8px 12px; margin-bottom: 3px;
-    background: #181818; border-radius: 10px; font-weight: 600; font-size: 0.85rem;
-    border-left: 3px solid #FFCC00; color: #ccc;
-  }
-  .top-track .pos { color: #FFCC00; margin-right: 8px; }
-  .top-track .score { color: #FFCC00; font-weight: 800; }
-
   .btn {
     border: none; padding: 14px 20px; border-radius: 50px;
     font-weight: 700; font-size: 0.9rem; text-transform: uppercase;
@@ -285,22 +267,6 @@
       <span class="value" id="chat-score">—</span>
       <span class="count" id="chat-count">0 голосов</span>
     </div>
-  </div>
-
-  <!-- ТОПЫ -->
-  <div class="card">
-    <h2>Топы</h2>
-    <div class="top-section">
-      <div class="top-col">
-        <h2 style="font-size:0.9rem; margin-bottom:10px;">Стример</h2>
-        <div class="top-list" id="top-streamer"></div>
-      </div>
-      <div class="top-col">
-        <h2 style="font-size:0.9rem; margin-bottom:10px;">Чат</h2>
-        <div class="top-list" id="top-chat"></div>
-      </div>
-    </div>
-    <button class="btn btn-outline btn-small" id="clear-tops" style="margin-top:12px;">Очистить топы</button>
   </div>
 
   <!-- КНОПКИ -->
@@ -474,66 +440,6 @@
 
   document.getElementById("add-deposit").addEventListener("click", addDeposit);
 
-  // --- ТОПЫ С АВТОСКРОЛЛОМ ---
-  let topData = { topStreamer: [], topChat: [] };
-  let streamerOffset = 0, chatOffset = 0;
-  const VISIBLE_ITEMS = 3;
-
-  async function loadTops() {
-    try {
-      const r = await fetch('/tops');
-      if (r.ok) topData = await r.json();
-    } catch(e) {}
-    updateTopLists();
-  }
-
-  function updateTopLists() {
-    renderTopList("top-streamer", topData.topStreamer || [], streamerOffset);
-    renderTopList("top-chat", topData.topChat || [], chatOffset);
-  }
-
-  function renderTopList(id, items, offset) {
-    const el = document.getElementById(id);
-    if (!items || items.length === 0) {
-      el.innerHTML = '<div style="color:#555;text-align:center;padding:36px;">Пусто</div>';
-      return;
-    }
-    items.sort((a,b) => b.score - a.score);
-    const total = items.length;
-    const maxOffset = Math.max(0, total - VISIBLE_ITEMS);
-    const safeOffset = Math.min(offset, maxOffset);
-    const visible = items.slice(safeOffset, safeOffset + VISIBLE_ITEMS);
-
-    el.innerHTML = visible.map((item, idx) => {
-      const pos = safeOffset + idx + 1;
-      return `<div class="top-track"><span><span class="pos">#${pos}</span> ${item.name}</span><span class="score">${item.score}</span></div>`;
-    }).join('');
-  }
-
-  function scrollTops() {
-    const sMax = Math.max(0, (topData.topStreamer || []).length - VISIBLE_ITEMS);
-    const cMax = Math.max(0, (topData.topChat || []).length - VISIBLE_ITEMS);
-
-    if (sMax > 0) {
-      streamerOffset++;
-      if (streamerOffset > sMax) streamerOffset = 0;
-    }
-    if (cMax > 0) {
-      chatOffset++;
-      if (chatOffset > cMax) chatOffset = 0;
-    }
-    updateTopLists();
-  }
-
-  setInterval(scrollTops, 3000);
-
-  document.getElementById("clear-tops").addEventListener("click", async () => {
-    try { await fetch('/clear', { method: 'POST' }); } catch(e) {}
-    streamerOffset = 0;
-    chatOffset = 0;
-    loadTops();
-  });
-
   // --- ПРОВЕРКА УСЛОВИЙ (только название трека) ---
   function checkSaveReady() {
     const trackName = document.getElementById("track-name").value.trim();
@@ -557,9 +463,6 @@
     document.getElementById("track-name").value = '';
     generateSliders(document.getElementById("has-lyrics").checked ? "vocal" : "instrumental");
     document.getElementById("save-rating").disabled = true;
-    streamerOffset = 0;
-    chatOffset = 0;
-    loadTops();
   }
 
   document.getElementById("save-rating").addEventListener("click", saveRating);
@@ -582,7 +485,6 @@
   // --- ИНИЦИАЛИЗАЦИЯ ---
   loadQueue();
   loadDeposits();
-  loadTops();
   checkSaveReady();
 </script>
 </body>
