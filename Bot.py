@@ -43,7 +43,12 @@ def init_warnings_db():
 init_warnings_db()
 
 # ==================== ПРОВЕРКА ПОДПИСКИ НА КАНАЛ ====================
-@bot.message_handler(func=lambda message: message.chat.id == SONGS_CHAT_ID)
+@bot.message_handler(
+    func=lambda message: message.chat.id == SONGS_CHAT_ID,
+    content_types=['text', 'audio', 'voice', 'document', 'video', 'video_note',
+                   'photo', 'sticker', 'animation', 'contact', 'location',
+                   'venue', 'poll', 'dice']
+)
 def check_channel_subscription(message):
     user_id = message.from_user.id
     username = message.from_user.username or f"user_{user_id}"
