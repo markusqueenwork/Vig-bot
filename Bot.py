@@ -143,10 +143,10 @@ def callback(call):
 
 def show_tariffs(call):
     markup = types.InlineKeyboardMarkup(row_width=1)
-    markup.add(types.InlineKeyboardButton("1 месяц — 300р", callback_data="tariff_1_month"))
-    markup.add(types.InlineKeyboardButton("3 месяца — 700р", callback_data="tariff_3_months"))
-    markup.add(types.InlineKeyboardButton("6 месяцев — 1500р", callback_data="tariff_6_months"))
-    markup.add(types.InlineKeyboardButton("1 год — 3500р", callback_data="tariff_1_year"))
+    markup.add(types.InlineKeyboardButton("1 месяц — 200р", callback_data="tariff_1_month"))
+    markup.add(types.InlineKeyboardButton("3 месяца — 490р", callback_data="tariff_3_months"))
+    markup.add(types.InlineKeyboardButton("6 месяцев — 990р", callback_data="tariff_6_months"))
+    markup.add(types.InlineKeyboardButton("1 год — 1990р", callback_data="tariff_1_year"))
     markup.add(types.InlineKeyboardButton("Проверить доступ", callback_data="check_vip"))
 
     bot.edit_message_text(
