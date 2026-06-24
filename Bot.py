@@ -15,10 +15,10 @@ SONGS_CHAT_ID = -1003703009385
 CHANNEL_USERNAME = "@voiceinsideglxy"
 
 TARIFFS = {
-    "1_month": {"name": "1 месяц", "price": 300, "days": 30},
-    "3_months": {"name": "3 месяца", "price": 700, "days": 90},
-    "6_months": {"name": "6 месяцев", "price": 1500, "days": 180},
-    "1_year": {"name": "1 год", "price": 3500, "days": 365}
+    "1_month": {"name": "1 месяц", "price": 200, "days": 30},
+    "3_months": {"name": "3 месяца", "price": 490, "days": 90},
+    "6_months": {"name": "6 месяцев", "price": 990, "days": 180},
+    "1_year": {"name": "1 год", "price": 1990, "days": 365}
 }
 
 bot = telebot.TeleBot(BOT_TOKEN)
