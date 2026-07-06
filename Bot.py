@@ -42,10 +42,43 @@ def init_warnings_db():
 
 init_warnings_db()
 
+# ==================== КОМАНДА /warn ====================
+@bot.message_handler(commands=['warn'])
+def warn_expired(message):
+    try:
+        response = requests.get(
+            f"{BACKEND_URL}/api/bot/expired",
+            timeout=10
+        )
+        data = response.json()
+        expired = data.get("expired", [])
+
+        if not expired:
+            bot.reply_to(message, "Нет пользователей с истекшей подпиской.")
+            return
+
+        warned = 0
+        failed = 0
+        for user_id in expired:
+            try:
+                bot.send_message(
+                    user_id,
+                    "Ваша подписка истекла. Оплатите в течение 24 часов, иначе доступ в чат будет закрыт.\nНажмите /start чтобы продлить."
+                )
+                warned += 1
+            except:
+                failed += 1
+
+        bot.reply_to(
+            message,
+            f"Предупреждения отправлены.\nОтправлено: {warned}\nНе удалось: {failed}"
+        )
+    except Exception as e:
+        bot.reply_to(message, f"Ошибка: {e}")
+
 # ==================== КОМАНДА /kick ====================
 @bot.message_handler(commands=['kick'])
 def kick_expired(message):
-    """Удаляет из VIP-чата всех, у кого истекла подписка"""
     try:
         response = requests.get(
             f"{BACKEND_URL}/api/bot/expired",
@@ -70,9 +103,7 @@ def kick_expired(message):
 
         bot.reply_to(
             message,
-            f"Проверка завершена.\n"
-            f"Удалено: {kicked}\n"
-            f"Ошибок: {failed}"
+            f"Удаление завершено.\nУдалено: {kicked}\nОшибок: {failed}"
         )
     except Exception as e:
         bot.reply_to(message, f"Ошибка: {e}")
