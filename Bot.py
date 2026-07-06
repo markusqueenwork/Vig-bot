@@ -42,6 +42,41 @@ def init_warnings_db():
 
 init_warnings_db()
 
+# ==================== КОМАНДА /kick ====================
+@bot.message_handler(commands=['kick'])
+def kick_expired(message):
+    """Удаляет из VIP-чата всех, у кого истекла подписка"""
+    try:
+        response = requests.get(
+            f"{BACKEND_URL}/api/bot/expired",
+            timeout=10
+        )
+        data = response.json()
+        expired = data.get("expired", [])
+
+        if not expired:
+            bot.reply_to(message, "Нет пользователей с истекшей подпиской.")
+            return
+
+        kicked = 0
+        failed = 0
+        for user_id in expired:
+            try:
+                bot.ban_chat_member(CHANNEL_VIP, user_id)
+                bot.unban_chat_member(CHANNEL_VIP, user_id)
+                kicked += 1
+            except:
+                failed += 1
+
+        bot.reply_to(
+            message,
+            f"Проверка завершена.\n"
+            f"Удалено: {kicked}\n"
+            f"Ошибок: {failed}"
+        )
+    except Exception as e:
+        bot.reply_to(message, f"Ошибка: {e}")
+
 # ==================== ПРОВЕРКА ПОДПИСКИ НА КАНАЛ ====================
 @bot.message_handler(
     func=lambda message: message.chat.id == SONGS_CHAT_ID,
