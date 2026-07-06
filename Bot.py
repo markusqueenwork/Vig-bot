@@ -42,9 +42,19 @@ def init_warnings_db():
 
 init_warnings_db()
 
-# ==================== КОМАНДА /warn ====================
+# ==================== КОМАНДЫ (приоритет выше) ====================
+
+@bot.message_handler(commands=['start'])
+def start(message):
+    markup = types.InlineKeyboardMarkup(row_width=1)
+    markup.add(types.InlineKeyboardButton("Telegram канал", url=TELEGRAM_CHANNEL))
+    markup.add(types.InlineKeyboardButton("Voice Inside Galaxy +", callback_data="vip"))
+    bot.send_message(message.chat.id, "Voice Inside Galaxy", reply_markup=markup)
+
 @bot.message_handler(commands=['warn'])
 def warn_expired(message):
+    status_msg = bot.reply_to(message, "Проверяю список должников...")
+
     try:
         response = requests.get(
             f"{BACKEND_URL}/api/bot/expired",
@@ -54,8 +64,18 @@ def warn_expired(message):
         expired = data.get("expired", [])
 
         if not expired:
-            bot.reply_to(message, "Нет пользователей с истекшей подпиской.")
+            bot.edit_message_text(
+                "Нет пользователей с истекшей подпиской.",
+                message.chat.id,
+                status_msg.message_id
+            )
             return
+
+        bot.edit_message_text(
+            f"Найдено должников: {len(expired)}. Отправляю предупреждения...",
+            message.chat.id,
+            status_msg.message_id
+        )
 
         warned = 0
         failed = 0
@@ -69,16 +89,22 @@ def warn_expired(message):
             except:
                 failed += 1
 
-        bot.reply_to(
-            message,
-            f"Предупреждения отправлены.\nОтправлено: {warned}\nНе удалось: {failed}"
+        bot.edit_message_text(
+            f"Предупреждения отправлены.\nОтправлено: {warned}\nНе удалось: {failed}",
+            message.chat.id,
+            status_msg.message_id
         )
     except Exception as e:
-        bot.reply_to(message, f"Ошибка: {e}")
+        bot.edit_message_text(
+            f"Ошибка: {e}",
+            message.chat.id,
+            status_msg.message_id
+        )
 
-# ==================== КОМАНДА /kick ====================
 @bot.message_handler(commands=['kick'])
 def kick_expired(message):
+    status_msg = bot.reply_to(message, "Проверяю список должников...")
+
     try:
         response = requests.get(
             f"{BACKEND_URL}/api/bot/expired",
@@ -88,8 +114,18 @@ def kick_expired(message):
         expired = data.get("expired", [])
 
         if not expired:
-            bot.reply_to(message, "Нет пользователей с истекшей подпиской.")
+            bot.edit_message_text(
+                "Нет пользователей с истекшей подпиской.",
+                message.chat.id,
+                status_msg.message_id
+            )
             return
+
+        bot.edit_message_text(
+            f"Найдено должников: {len(expired)}. Удаляю из чата...",
+            message.chat.id,
+            status_msg.message_id
+        )
 
         kicked = 0
         failed = 0
@@ -101,16 +137,21 @@ def kick_expired(message):
             except:
                 failed += 1
 
-        bot.reply_to(
-            message,
-            f"Удаление завершено.\nУдалено: {kicked}\nОшибок: {failed}"
+        bot.edit_message_text(
+            f"Удаление завершено.\nУдалено: {kicked}\nОшибок: {failed}",
+            message.chat.id,
+            status_msg.message_id
         )
     except Exception as e:
-        bot.reply_to(message, f"Ошибка: {e}")
+        bot.edit_message_text(
+            f"Ошибка: {e}",
+            message.chat.id,
+            status_msg.message_id
+        )
 
-# ==================== ПРОВЕРКА ПОДПИСКИ НА КАНАЛ ====================
+# ==================== ПРОВЕРКА ПОДПИСКИ НА КАНАЛ (только не команды) ====================
 @bot.message_handler(
-    func=lambda message: message.chat.id == SONGS_CHAT_ID,
+    func=lambda message: message.chat.id == SONGS_CHAT_ID and not (message.text and message.text.startswith('/')),
     content_types=['text', 'audio', 'voice', 'document', 'video', 'video_note',
                    'photo', 'sticker', 'animation', 'contact', 'location',
                    'venue', 'poll', 'dice']
@@ -188,14 +229,7 @@ def run_periodic_check():
 
 threading.Thread(target=run_periodic_check, daemon=True).start()
 
-# ==================== ГЛАВНОЕ МЕНЮ ====================
-@bot.message_handler(commands=['start'])
-def start(message):
-    markup = types.InlineKeyboardMarkup(row_width=1)
-    markup.add(types.InlineKeyboardButton("Telegram канал", url=TELEGRAM_CHANNEL))
-    markup.add(types.InlineKeyboardButton("Voice Inside Galaxy +", callback_data="vip"))
-    bot.send_message(message.chat.id, "Voice Inside Galaxy", reply_markup=markup)
-
+# ==================== КОЛБЭКИ ====================
 @bot.callback_query_handler(func=lambda call: True)
 def callback(call):
     if call.data == "vip":
